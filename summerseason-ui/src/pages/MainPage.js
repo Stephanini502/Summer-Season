@@ -46,11 +46,6 @@ function MainPage() {
               </div>
             </div>
           </div>
-            <div className="col-12 text-center mt-9" onClick={() => navigate(`/challenges`)}>
-                <button className="btn btn-primary">
-                Vai alle sfide
-                </button>
-            </div>
         </div>
       </div>
     </div>
