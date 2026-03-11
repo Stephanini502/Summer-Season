@@ -143,4 +143,18 @@ public class LeagueController : ControllerBase
             return BadRequest($"Error loading League for user {userId}: " + e.Message);
         }
     }
+
+    [HttpDelete("{leagueId}/{userId}")]
+    public async Task<ActionResult> RemoveUserFromLeague(int leagueId, int userId)
+    {
+        try
+        {
+            await _service.RemoveUserFromLeague(leagueId, userId);
+            return Ok($"User with id {userId} successfully deleted from league with id {leagueId}");
+        }
+        catch(Exception e)
+        {
+            return BadRequest($"Error removing user {userId} from league {leagueId}: " + e.Message);
+        }
+    }
 }

@@ -2,15 +2,18 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function AdminPage() {
+
   const [users, setUsers] = useState([]);
   const [leagues, setLeagues] = useState([]);
   const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
   const token = localStorage.getItem("jwtToken");
+
   const headers = {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${token}`
   };
 
   const [userForm, setUserForm] = useState({
@@ -18,7 +21,7 @@ function AdminPage() {
     surname: "",
     username: "",
     password: "",
-    role: "4", 
+    role: "4"
   });
 
   const [leagueName, setLeagueName] = useState("");
@@ -29,63 +32,86 @@ function AdminPage() {
     1: "Referee",
     2: "League Admin",
     3: "Participant",
-    4: "Guest",
+    4: "Guest"
   };
 
-const normalizeUser = (u) => {
-  let roles = u.roles ?? u.Roles ?? [];
+  const normalizeUser = (u) => {
 
-  if (roles && roles.$values) roles = roles.$values;
+    let roles = u.roles ?? u.Roles ?? [];
 
-  if (!Array.isArray(roles)) roles = [];
+    if (roles && roles.$values) roles = roles.$values;
 
-  return {
-    id: u.id ?? u.Id,
-    name: u.name ?? u.Name ?? "",
-    surname: u.surname ?? u.Surname ?? "",
-    userName: u.userName ?? u.UserName ?? "",
-    roles, 
-    totalPoints: u.totalPoints ?? u.TotalPoints ?? 0,
+    if (!Array.isArray(roles)) roles = [];
+
+    return {
+      id: u.id ?? u.Id,
+      name: u.name ?? u.Name ?? "",
+      surname: u.surname ?? u.Surname ?? "",
+      userName: u.userName ?? u.UserName ?? "",
+      roles,
+      totalPoints: u.totalPoints ?? u.TotalPoints ?? 0
+    };
   };
-};
 
   const normalizeLeague = (l) => ({
     id: l.id ?? l.Id,
     name: l.name ?? l.Name ?? "",
-    creationDate: l.creationDate ?? l.CreationDate ?? new Date(),
+    creationDate: l.creationDate ?? l.CreationDate ?? new Date()
   });
 
   const loadUsers = async () => {
+
     try {
+
       const res = await fetch("http://localhost:5247/api/users", { headers });
+
       if (!res.ok) throw new Error(`Errore caricamento utenti (${res.status})`);
+
       let data = await res.json();
+
       if (data.$values) data = data.$values;
+
       setUsers(Array.isArray(data) ? data.map(normalizeUser) : []);
+
     } catch (err) {
+
       setError(err.message);
+
     }
   };
 
   const loadLeagues = async () => {
+
     try {
+
       const res = await fetch("http://localhost:5247/api/leagues", { headers });
+
       if (!res.ok) throw new Error(`Errore caricamento leghe (${res.status})`);
+
       let data = await res.json();
+
       if (data.$values) data = data.$values;
+
       setLeagues(Array.isArray(data) ? data.map(normalizeLeague) : []);
+
     } catch (err) {
+
       setError(err.message);
+
     }
   };
 
   useEffect(() => {
+
     loadUsers();
     loadLeagues();
+
   }, []);
 
   const handleCreateUser = async (e) => {
+
     e.preventDefault();
+
     setError("");
 
     const roleName = roleMap[Number(userForm.role)];
@@ -95,68 +121,119 @@ const normalizeUser = (u) => {
       Surname: userForm.surname,
       Username: userForm.username,
       Password: userForm.password,
-      Roles: [roleName], 
-      TotalPoints: 0,
+      Roles: [roleName],
+      TotalPoints: 0
     };
 
     try {
+
       const res = await fetch("http://localhost:5247/api/users", {
         method: "POST",
         headers,
-        body: JSON.stringify(newUser),
+        body: JSON.stringify(newUser)
       });
+
       if (!res.ok) throw new Error("Errore creazione utente");
+
       setUserForm({ name: "", surname: "", username: "", password: "", role: "3" });
+
       loadUsers();
+
     } catch (err) {
+
       setError(err.message);
+
     }
   };
 
   const handleDeleteUser = async (user) => {
-    const confirm = window.confirm(`Sei sicuro di voler eliminare l'utente: ${user.surname}?`);
-    if (!confirm) return;
+
+    const confirmDelete = window.confirm(`Sei sicuro di voler eliminare l'utente: ${user.surname}?`);
+
+    if (!confirmDelete) return;
 
     try {
+
       const res = await fetch(`http://localhost:5247/api/users/${user.id}`, {
         method: "DELETE",
-        headers,
+        headers
       });
+
       if (!res.ok) throw new Error(`Errore eliminazione utente (${res.status})`);
-      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+
+      setUsers(prev => prev.filter(u => u.id !== user.id));
+
     } catch (err) {
+
       setError(err.message);
+
+    }
+  };
+
+  const handleDeleteLeague = async (league) => {
+
+    const confirmDelete = window.confirm(`Sei sicuro di voler eliminare la lega: ${league.name}?`);
+
+    if (!confirmDelete) return;
+
+    try {
+
+      const res = await fetch(`http://localhost:5247/api/leagues/${league.id}`, {
+        method: "DELETE",
+        headers
+      });
+
+      if (!res.ok) throw new Error("Errore eliminazione lega");
+
+      setLeagues(prev => prev.filter(l => l.id !== league.id));
+
+    } catch (err) {
+
+      setError(err.message);
+
     }
   };
 
   const handleCreateLeague = async (e) => {
+
     e.preventDefault();
+
     setError("");
 
     const newLeague = {
       name: leagueName,
       participantIds: selectedUsers,
-      challengeIds: [],
+      challengeIds: []
     };
 
     try {
+
       const res = await fetch("http://localhost:5247/api/leagues", {
         method: "POST",
         headers,
-        body: JSON.stringify(newLeague),
+        body: JSON.stringify(newLeague)
       });
+
       if (!res.ok) throw new Error("Errore creazione lega");
+
       setLeagueName("");
       setSelectedUsers([]);
+
       loadLeagues();
+
     } catch (err) {
+
       setError(err.message);
+
     }
   };
 
   const handleSelectUser = (userId) => {
-    setSelectedUsers((prev) =>
-      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
+
+    setSelectedUsers(prev =>
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
     );
   };
 
@@ -164,7 +241,7 @@ const normalizeUser = (u) => {
     <div className="container py-5" style={{ fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#f2f3f7" }}>
       <div className="d-flex justify-content-between align-items-center mb-5">
         <h1 className="fw-bold text-primary">Admin Dashboard</h1>
-        <button className="btn btn-primary"  onClick={() => navigate(`/admin/challenges`)}>
+        <button className="btn btn-primary"  onClick={() => navigate(`/challenges`)}>
             Vai alle sfide
         </button>
       </div>
@@ -332,7 +409,6 @@ const normalizeUser = (u) => {
               <table className="table table-hover mb-0 align-middle" style={{ tableLayout: "fixed" }}>
                 <thead className="table-light">
                   <tr>
-                    <th>ID</th>
                     <th>Nome</th>
                     <th>Creazione</th>
                   </tr>
@@ -340,9 +416,9 @@ const normalizeUser = (u) => {
                 <tbody>
                   {leagues.map((l) => (
                     <tr key={l.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/league/${l.id}`)}>
-                      <td>{l.id}</td>
                       <td>{l.name}</td>
                       <td>{new Date(l.creationDate).toLocaleDateString()}</td>
+                      
                     </tr>
                   ))}
                 </tbody>

@@ -14,20 +14,31 @@ public class ResultService
         _context = context;
     }
 
-    public async Task AddResultAsync(Result result)
+public async Task AddResultAsync(ResultRequestDto requestResult)
+{
+    var user = await _context.Users.FindAsync(requestResult.UserId);
+    if (user == null)
+        throw new Exception("User not found");
+
+    var challenge = await _context.Challenges.FindAsync(requestResult.ChallengeId);
+    if (challenge == null)
+        throw new Exception("Challenge not found");
+
+    var result = new Result
     {
-        _context.Results.Add(result);
+        UserId = requestResult.UserId,
+        User = user,
+        ChallengeId = requestResult.ChallengeId,
+        Challenge = challenge,
+        PointsAwarded = requestResult.PointsAwarded
+    };
 
-        var user = await _context.Users
-            .FirstOrDefaultAsync(p => p.Id == result.User.Id);
+    _context.Results.Add(result);
 
-        if (user == null)
-            throw new Exception("Participant not found");
+    user.TotalPoints += result.PointsAwarded;
 
-        user.TotalPoints += result.PointsAwarded;
-
-        await _context.SaveChangesAsync();
-    }
+    await _context.SaveChangesAsync();
+}
 
     public async Task<List<UserResponseDto>> GetRankingAsync()
     {

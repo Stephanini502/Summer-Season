@@ -12,6 +12,7 @@ import MainPage from "./pages/MainPage";
 import ScrollToTop from "./components/ScrollToTop";
 import ChallengesPage from "./pages/ChallengesPage";
 import ChallengesAdminPage from "./pages/ChallengesAdminPage";
+import LeagueDataAdminPage from "./pages/LeagueDataAdminPage";
 
 function getRolesFromStorage() {
   try {
@@ -64,11 +65,7 @@ function App() {
           />
           <Route
             path="/challenges"
-            element={ <ChallengesPage />}
-          />
-          <Route
-            path="/admin/challenges"
-            element= {isLoggedIn && isAdmin ? <ChallengesAdminPage /> : <Navigate to="/login" replace />}
+            element= {isLoggedIn && isAdmin ? <ChallengesAdminPage /> : <ChallengesPage />}
           />
           <Route
             path="/user/:id"
@@ -76,7 +73,7 @@ function App() {
           />
           <Route
             path="/league/:id"
-            element={isLoggedIn ? <LeagueDataPage /> : <Navigate to="/login" replace />}
+            element={isLoggedIn && isAdmin ? <LeagueDataAdminPage /> : <LeagueDataPage />}
           />
           <Route path="*" element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
         </Routes>

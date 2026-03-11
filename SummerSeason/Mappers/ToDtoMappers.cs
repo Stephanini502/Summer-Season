@@ -29,7 +29,7 @@ public class ToDtoMappers
     public static ChallengeResponseDto ToChallengeDto(Challenge c) =>
         new ChallengeResponseDto
         {
-        id = c.Id,
+        Id = c.Id,
         Name = c.Name ?? "-",
         Description = c.Description ?? "-",
         Points = c.Points,

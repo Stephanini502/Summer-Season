@@ -18,7 +18,7 @@ public class ResultsController : ControllerBase
         }
     
     [HttpPost]
-    public async Task<IActionResult> addResult([FromBody] Result result)
+    public async Task<IActionResult> addResult([FromBody] ResultRequestDto result)
         {
             try
             {

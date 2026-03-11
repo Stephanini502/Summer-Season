@@ -2,7 +2,7 @@ namespace SummerSeason.Dtos;
 
 public class ChallengeResponseDto
 {
-    public long id;
+    public long Id{get; set;}
     public String? Name{get; set;}
     public String? Description{get; set;}
     public int Points{get; set;}

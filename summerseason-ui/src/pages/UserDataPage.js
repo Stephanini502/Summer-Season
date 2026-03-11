@@ -106,9 +106,6 @@ function UserDataPage() {
 
   const getPositionBadge = (pos) => {
     if (!pos) return "-";
-    if (pos === 1) return "🥇";
-    if (pos === 2) return "🥈";
-    if (pos === 3) return "🥉";
     return `#${pos}`;
   };
 
@@ -222,7 +219,7 @@ function UserDataPage() {
               </div>
             </div>
             <div className="table-responsive">
-              <table className="table table-sm mb-0">
+              <table className="table table-hover mb-0">
                 <thead className="table-light">
                   <tr>
                     <th>Lega</th>

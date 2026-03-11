@@ -177,4 +177,25 @@ public class LeagueService
         return user.Leagues?.Select(l => ToDtoMappers.ToLeagueDto(l)).ToList();
     }
 
+public async Task RemoveUserFromLeague(int leagueId, int userId)
+{
+    var league = await _context.Leagues
+        .Include(l => l.Users) 
+        .FirstOrDefaultAsync(l => l.Id == leagueId);
+
+    if (league == null)
+        throw new Exception($"League not found with id {leagueId}");
+
+    var user = await _context.Users.FindAsync(userId);
+    if (user == null)
+        throw new Exception($"User not found with id {userId}");
+
+    if (!league.Users.Contains(user))
+        throw new Exception($"User with id {userId} is not part of league {leagueId}");
+
+    league.Users.Remove(user);
+
+    await _context.SaveChangesAsync();
+}
+
 }

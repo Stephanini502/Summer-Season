@@ -1,25 +1,18 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 function LeagueDataPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [league, setLeague] = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [ranking, setRanking] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
-  const [userRoles, setUserRoles] = useState({});
-
-  const [selectedUserId, setSelectedUserId] = useState("");
-  const [selectedRefereeId, setSelectedRefereeId] = useState("");
-
+  const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const token = localStorage.getItem("jwtToken");
-  const refereeRole = "Referee";
 
-  // ---- Helpers ----
   const normalizeValues = (data) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -32,334 +25,164 @@ function LeagueDataPage() {
     name: u.name ?? u.Name ?? "",
     surname: u.surname ?? u.Surname ?? "",
     userName: u.userName ?? u.UserName ?? "",
-    roles: Array.isArray(u.roles ?? u.Roles)
-      ? (u.roles ?? u.Roles).map((r) => r.toString())
-      : [],
     totalPoints: u.totalPoints ?? u.TotalPoints ?? 0,
   });
 
-  const referees = (participants || []).filter(
-    (u) => userRoles[u.id] && userRoles[u.id].includes(refereeRole)
-  );
+  const normalizeChallenge = (c) => ({
+    id: c.id ?? c.Id,
+    name: c.name ?? c.Name ?? "",
+    description: c.description ?? c.Description ?? "",
+    points: c.points ?? c.Points ?? 0,
+  });
 
-  const loadRolesForParticipants = async (users) => {
-    const rolesMap = {};
-
-    await Promise.all(
-      users.map(async (u) => {
-        try {
-          const res = await fetch(
-            `http://localhost:5247/api/users/${u.id}/roles`,
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-          if (res.ok) {
-            let roles = await res.json();
-            // Normalizza $values in array
-            if (roles && roles.$values) roles = roles.$values;
-            if (!Array.isArray(roles)) roles = [];
-            rolesMap[u.id] = roles.map((r) => r.toString());
-          } else {
-            rolesMap[u.id] = [];
-          }
-        } catch (err) {
-          console.error("Errore ruoli utente", u.id, err);
-          rolesMap[u.id] = [];
-        }
-      })
-    );
-
-    setUserRoles(rolesMap);
-  };
-  useEffect(() => {
-    if (!id) return;
-
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    };
-
+  const fetchLeagueData = async () => {
     setLoading(true);
     setError("");
 
-    const safeJson = async (response) => {
-      if (!response.ok) throw new Error(`Errore API (${response.status})`);
-      const text = await response.text();
-      return text ? JSON.parse(text) : null;
-    };
-
-    Promise.all([
-      fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(
-        safeJson
-      ),
-      fetch(
-        `http://localhost:5247/api/leagues/${id}/participants`,
-        { headers }
-      ).then(safeJson),
-      fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(
-        safeJson
-      ),
-      fetch(`http://localhost:5247/api/users`, { headers }).then(safeJson),
-    ])
-      .then(([leagueData, participantsData, rankingData, usersData]) => {
-        setLeague(leagueData);
-
-        const normalizedParticipants = normalizeValues(participantsData).map(
-          normalizeUser
-        );
-        setParticipants(normalizedParticipants);
-
-        const normalizedRanking = normalizeValues(rankingData).map(normalizeUser);
-        setRanking(normalizedRanking);
-
-        const normalizedUsers = normalizeValues(usersData).map(normalizeUser);
-        setAllUsers(normalizedUsers);
-
-        if (normalizedParticipants.length > 0) {
-          loadRolesForParticipants(normalizedParticipants);
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setError(err.message);
-      })
-      .finally(() => setLoading(false));
-  }, [id, token]);
-
-  const refreshParticipantsAndRanking = () => {
     const headers = { Authorization: `Bearer ${token}` };
 
-    fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers })
-      .then((res) => res.json())
-      .then((data) => {
-        const normalized = normalizeValues(data).map(normalizeUser);
-        setParticipants(normalized);
-        loadRolesForParticipants(normalized);
-      })
-      .catch(console.error);
+    try {
+      const [leagueData, rankingData, challengesData] = await Promise.all([
+        fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(res => res.json()),
+        fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(res => res.json()),
+        fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(res => res.json()),
+      ]);
 
-    fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers })
-      .then((res) => res.json())
-      .then((data) => {
-        const normalized = normalizeValues(data).map(normalizeUser);
-        setRanking(normalized);
-      })
-      .catch(console.error);
+      setLeague(leagueData);
+
+      // Ordina i partecipanti per punti decrescenti
+      const normalizedParticipants = normalizeValues(rankingData)
+        .map(normalizeUser)
+        .sort((a, b) => b.totalPoints - a.totalPoints);
+
+      setParticipants(normalizedParticipants);
+      setChallenges(normalizeValues(challengesData).map(normalizeChallenge));
+    } catch (err) {
+      console.error(err);
+      setError("Errore caricamento dati lega");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddParticipant = () => {
-    if (!selectedUserId) return;
-
-    fetch(
-      `http://localhost:5247/api/leagues/${id}/participants/${selectedUserId}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    )
-      .then((res) => {
-        if (!res.ok) throw new Error("Errore aggiunta partecipante");
-        alert("Partecipante aggiunto!");
-        setSelectedUserId("");
-        refreshParticipantsAndRanking();
-      })
-      .catch((err) => alert(err.message));
-  };
-
-  const handleSetReferee = () => {
-    if (!selectedRefereeId) return;
-
-    fetch(`http://localhost:5247/api/users/${selectedRefereeId}/${refereeRole}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error("Errore assegnazione arbitro");
-        alert("Arbitro assegnato!");
-        setSelectedRefereeId("");
-        refreshParticipantsAndRanking();
-      })
-      .catch((err) => alert(err.message));
-  };
+  useEffect(() => {
+    fetchLeagueData();
+  }, [id]);
 
   if (loading) return <div className="p-5 text-center">Caricamento...</div>;
   if (error) return <div className="p-5 text-danger text-center">{error}</div>;
   if (!league) return <div className="p-5 text-center">Lega non trovata</div>;
 
+  // Primo in classifica
+  const topPlayer = participants.length > 0 ? participants[0] : null;
+
   return (
-    <div
-      className="container-fluid py-4"
-      style={{ backgroundColor: "#f4f6f9", minHeight: "100vh" }}
-    >
-      <div className="mb-4">
-        <h2 className="fw-bold text-dark">{league.name}</h2>
-        <span className="text-muted">
-          Creata il {new Date(league.creationDate).toLocaleDateString()}
-        </span>
+    <div style={{ backgroundColor: "#f5f6fa", minHeight: "100vh", paddingBottom: "50px" }}>
+      
+      {/* Hero Section */}
+      <div
+        className="d-flex flex-column flex-md-row justify-content-between align-items-center p-5 mb-5"
+        style={{
+          background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
+          color: "#fff",
+          borderRadius: "15px",
+          margin: "20px auto",
+          maxWidth: "1200px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+        }}
+      >
+        <div>
+          <h1 className="fw-bold mb-2">{league.name}</h1>
+          <p className="mb-0">Creata il {new Date(league.creationDate).toLocaleDateString()}</p>
+        </div>
+        <button
+          className="btn btn-light btn-lg mt-3 mt-md-0"
+          style={{ fontWeight: "600" }}
+          onClick={() => navigate(`/challenges`)}
+        >
+          Vai alle sfide
+        </button>
       </div>
 
-      <div className="row">
-        {/* ---- Colonna sinistra ---- */}
-        <div className="col-lg-4 mb-4">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-light fw-semibold">
-              Informazioni Lega
-            </div>
-            <div className="card-body">
-              <p>
-                <strong>Partecipanti:</strong> {participants.length}
-              </p>
-              <p>
-                <strong>Data creazione:</strong>{" "}
-                {new Date(league.creationDate).toLocaleDateString()}
-              </p>
-            </div>
-          </div>
+      <div className="container" style={{ maxWidth: "1200px" }}>
+        <div className="row g-4">
 
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-light fw-semibold">Statistica</div>
-            <div className="card-body text-center">
-              <h6 className="text-muted">Totale partecipanti</h6>
-              <h2 className="text-primary">{participants.length}</h2>
-            </div>
-          </div>
-
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-light fw-semibold">Arbitro</div>
-            <div className="card-body text-center">
-              {referees.length > 0 ? (
-                referees.map((r) => (
-                  <div key={r.id}>
-                    {r.name} {r.surname} ({r.userName})
-                  </div>
-                ))
-              ) : (
-                <div className="text-muted">Non assegnato</div>
-              )}
-            </div>
-          </div>
-
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-light fw-semibold">Assegna Arbitro</div>
-            <div className="card-body d-flex gap-2 align-items-center">
-              <select
-                className="form-select"
-                value={selectedRefereeId}
-                onChange={(e) => setSelectedRefereeId(e.target.value)}
-              >
-                <option value="">Seleziona partecipante...</option>
-                {(participants || []).map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} {u.surname} ({u.userName})
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-warning" onClick={handleSetReferee}>
-                Assegna
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* ---- Colonna destra ---- */}
-        <div className="col-lg-8">
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-light fw-semibold">Aggiungi Partecipante</div>
-            <div className="card-body d-flex gap-2 align-items-center">
-              <select
-                className="form-select"
-                value={selectedUserId}
-                onChange={(e) => setSelectedUserId(e.target.value)}
-              >
-                <option value="">Seleziona utente...</option>
-                {(allUsers || []).map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} {u.surname} ({u.userName})
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-primary" onClick={handleAddParticipant}>
-                Aggiungi
-              </button>
+          {/* Statistiche rapide */}
+          <div className="col-12 mb-4">
+            <div className="d-flex justify-content-between flex-wrap gap-3">
+              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
+                <h6 className="text-muted mb-1">Partecipanti</h6>
+                <h3 className="fw-bold">{participants.length}</h3>
+              </div>
+              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
+                <h6 className="text-muted mb-1">Sfide Totali</h6>
+                <h3 className="fw-bold">{challenges.length}</h3>
+              </div>
+              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
+                <h6 className="text-muted mb-1">Leader attuale</h6>
+                <h5 className="fw-bold">{topPlayer ? `${topPlayer.name} ${topPlayer.surname}` : "N/A"}</h5>
+                <div className="text-muted small">{topPlayer ? topPlayer.userName : ""}</div>
+              </div>
             </div>
           </div>
 
           {/* Partecipanti */}
-          <div className="card shadow-sm border-0 mb-4">
-            <div className="card-header bg-light fw-semibold">Partecipanti</div>
-            <div className="table-responsive">
-              <table className="table table-hover mb-0 align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>Nome</th>
-                    <th>Username</th>
-                    <th>Punti</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(participants || []).length > 0 ? (
-                    (participants || []).map((u) => (
-                      <tr key={u.id}>
-                        <td>
-                          {u.name || "-"} {u.surname || ""}
-                        </td>
-                        <td>{u.userName || "-"}</td>
-                        <td>{u.totalPoints || 0}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="3" className="text-center text-muted py-4">
-                        Nessun partecipante
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          <div className="col-lg-6">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-light fw-semibold border-bottom">Partecipanti</div>
+              <ul className="list-group list-group-flush">
+                {participants.length > 0 ? (
+                  participants.map((u, idx) => (
+                    <li
+                      key={u.id}
+                      className="list-group-item d-flex justify-content-between align-items-center"
+                      style={{ cursor: "pointer", transition: "0.2s" }}
+                      onClick={() => navigate(`/user/${u.id}`)}
+                      onMouseOver={e => e.currentTarget.style.backgroundColor="#f1f3f6"}
+                      onMouseOut={e => e.currentTarget.style.backgroundColor="transparent"}
+                    >
+                      <div>
+                        <div className="fw-semibold">{idx + 1}. {u.name} {u.surname}</div>
+                        <div className="text-muted small">{u.userName}</div>
+                      </div>
+                      <span className="badge bg-primary rounded-pill">{u.totalPoints} pts</span>
+                    </li>
+                  ))
+                ) : (
+                  <p className="text-center text-muted my-3">Nessun partecipante nella lega</p>
+                )}
+              </ul>
             </div>
           </div>
 
-          {/* Classifica */}
-          <div className="card shadow-sm border-0">
-            <div className="card-header bg-light fw-semibold">Classifica Lega</div>
-            <div className="table-responsive">
-              <table className="table table-hover mb-0 align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>#</th>
-                    <th>Nome</th>
-                    <th>Username</th>
-                    <th>Punti</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(ranking || []).length > 0 ? (
-                    (ranking || []).map((u, index) => (
-                      <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>
-                          {u.name || "-"} {u.surname || ""}
-                        </td>
-                        <td>{u.userName || "-"}</td>
-                        <td>{u.totalPoints || 0}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="4" className="text-center text-muted py-4">
-                        Nessun partecipante
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+          {/* Sfide */}
+          <div className="col-lg-6">
+            <div className="card border-0 shadow-sm">
+              <div className="card-header bg-light fw-semibold border-bottom">Sfide</div>
+              <ul className="list-group list-group-flush">
+                {challenges.length > 0 ? (
+                  challenges.map((c) => (
+                    <li
+                      key={c.id}
+                      className="list-group-item d-flex justify-content-between align-items-center"
+                      style={{ transition: "0.2s" }}
+                      onMouseOver={e => e.currentTarget.style.backgroundColor="#f1f3f6"}
+                      onMouseOut={e => e.currentTarget.style.backgroundColor="transparent"}
+                    >
+                      <div>
+                        <div className="fw-semibold">{c.name}</div>
+                        <div className="text-muted small">{c.description}</div>
+                      </div>
+                      <span className="badge bg-success rounded-pill">{c.points} pts</span>
+                    </li>
+                  ))
+                ) : (
+                  <p className="text-center text-muted my-3">Nessuna sfida disponibile</p>
+                )}
+              </ul>
             </div>
           </div>
+
         </div>
       </div>
     </div>
