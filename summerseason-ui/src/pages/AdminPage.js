@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { adminStyles } from "../style/AdminPageStyle";
+import { adminStyles } from "../style/SharedStyles";
 
 const roleMap = {
   0: "Admin", 1: "Referee", 2: "League Admin", 3: "Participant", 4: "Guest"

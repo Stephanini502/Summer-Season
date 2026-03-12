@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
+import { navStyles } from "../style/SharedStyles";
+import { useNavigate} from "react-router-dom";
+
 
 function Navbar() {
   const navigate = useNavigate();
@@ -8,40 +9,54 @@ function Navbar() {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("userRoles");
     localStorage.removeItem("userId");
-    window.location.reload(); 
+    window.location.reload();
   };
 
   const isLoggedIn = !!localStorage.getItem("jwtToken");
 
+  const userId = localStorage.getItem("userId");
+
   return (
-    <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-      <div className="container">
-        <a className="navbar-brand fw-bold" href="/">Summer Season</a>
-        <div className="d-flex">
-          {!isLoggedIn && (
-            <>
-              <button
-                className="btn btn-outline-light me-2"
-                onClick={() => navigate("/login")}
-              >
-                Login
-              </button>
-              <button
-                className="btn btn-light"
-                onClick={() => navigate("/register")}
-              >
-                Registrati
-              </button>
-            </>
-          )}
-          {isLoggedIn && (
-            <button className="btn btn-outline-light" onClick={handleLogout}>
-              Logout
-            </button>
-          )}
+    <>
+      <style>{navStyles}</style>
+      <nav className="nav-root">
+        <div className="nav-inner">
+
+          <div className="nav-brand" onClick={() => navigate("/")}>
+            <div className="nav-brand-icon">☀️</div>
+            <span className="nav-brand-text">Summer<span>Season</span></span>
+          </div>
+
+          <div className="nav-actions">
+            {!isLoggedIn && (
+              <>
+                <button className="nav-btn nav-btn-ghost" onClick={() => navigate("/login")}>
+                  Accedi
+                </button>
+                <button className="nav-btn nav-btn-primary" onClick={() => navigate("/register")}>
+                  Registrati
+                </button>
+              </>
+            )}
+
+            {isLoggedIn && (
+              <>
+                {userId && (
+                  <button className="nav-btn nav-btn-ghost" onClick={() => navigate(`/user/${userId}`)}>
+                    👤 Il mio profilo
+                  </button>
+                )}
+                <div className="nav-divider" />
+                <button className="nav-btn nav-btn-outline" onClick={handleLogout}>
+                  Esci
+                </button>
+              </>
+            )}
+          </div>
+
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
 
