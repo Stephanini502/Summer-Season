@@ -43,10 +43,15 @@ function LeagueDataPage() {
       const [leagueData, rankingData, challengesData] = await Promise.all([
         fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
+        // GetChallengesByLeagueId: restituisce solo le sfide che hanno questo id nella lista LeagueIds
         fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(r => r.json()),
       ]);
       setLeague(leagueData);
-      setParticipants(normalizeValues(rankingData).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints));
+      setParticipants(
+        normalizeValues(rankingData)
+          .map(normalizeUser)
+          .sort((a, b) => b.totalPoints - a.totalPoints)
+      );
       setChallenges(normalizeValues(challengesData).map(normalizeChallenge));
     } catch (err) {
       setError("Errore caricamento dati lega");
@@ -81,7 +86,10 @@ function LeagueDataPage() {
   const topPlayer = participants.length > 0 ? participants[0] : null;
   const totalPts = challenges.reduce((s, c) => s + (c.points || 0), 0);
 
-  const rankClass = (i) => i === 0 ? "pg-rank pg-rank-1" : i === 1 ? "pg-rank pg-rank-2" : i === 2 ? "pg-rank pg-rank-3" : "pg-rank";
+  const rankClass = (i) =>
+    i === 0 ? "pg-rank pg-rank-1" :
+    i === 1 ? "pg-rank pg-rank-2" :
+    i === 2 ? "pg-rank pg-rank-3" : "pg-rank";
 
   return (
     <>
@@ -92,13 +100,15 @@ function LeagueDataPage() {
           {/* HERO */}
           <div className="pg-hero">
             <div>
-              <p style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
-                Pagina Lega
-              </p>
+              <p className="pg-hero-eyebrow">Pagina Lega</p>
               <h1 className="pg-hero-title">{league.name}</h1>
-              <p className="pg-hero-sub">Creata il {new Date(league.creationDate).toLocaleDateString("it-IT")}</p>
+              <p className="pg-hero-sub">
+                Creata il {new Date(league.creationDate).toLocaleDateString("it-IT")}
+              </p>
             </div>
-            <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
+            <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>
+              🏁 Vai alle sfide
+            </button>
           </div>
 
           {/* STATS */}
@@ -112,7 +122,7 @@ function LeagueDataPage() {
             </div>
             <div className="pg-stat-card">
               <div>
-                <p className="pg-stat-label">Sfide</p>
+                <p className="pg-stat-label">Sfide di questa lega</p>
                 <p className="pg-stat-value">{challenges.length}</p>
               </div>
               <div className="pg-stat-icon">🏁</div>
@@ -122,7 +132,7 @@ function LeagueDataPage() {
                 <p className="pg-stat-label">Punti ottenibili</p>
                 <p className="pg-stat-value">{totalPts}</p>
               </div>
-              <div className="pg-stat-icon pg-stat-icon-green">⭐</div>
+              <div className="pg-stat-icon pg-stat-icon-sun">⭐</div>
             </div>
             {topPlayer && (
               <div className="pg-stat-card">
@@ -139,7 +149,7 @@ function LeagueDataPage() {
           {/* MAIN GRID */}
           <div className="pg-grid-2">
 
-            {/* PARTECIPANTI */}
+            {/* CLASSIFICA */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -165,13 +175,16 @@ function LeagueDataPage() {
               </ul>
             </div>
 
-            {/* SFIDE */}
+            {/* SFIDE DELLA LEGA */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
                   <div className="pg-card-icon">🏁</div>
-                  <h2 className="pg-card-title">Sfide della lega</h2>
+                  <h2 className="pg-card-title">Sfide di questa lega</h2>
                 </div>
+                {challenges.length > 0 && (
+                  <span className="pg-badge pg-badge-sun">{challenges.length} sfide</span>
+                )}
               </div>
               <ul className="pg-list">
                 {challenges.length > 0 ? challenges.map(c => (
@@ -183,7 +196,12 @@ function LeagueDataPage() {
                     <span className="pg-badge pg-badge-green">+{c.points} pts</span>
                   </li>
                 )) : (
-                  <li><div className="pg-empty">Nessuna sfida disponibile</div></li>
+                  <li>
+                    <div className="pg-empty" style={{ padding: "32px 0" }}>
+                      <div style={{ fontSize: "1.8rem", marginBottom: 8 }}>🏝️</div>
+                      <p>Nessuna sfida assegnata a questa lega</p>
+                    </div>
+                  </li>
                 )}
               </ul>
             </div>

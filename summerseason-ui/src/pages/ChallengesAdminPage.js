@@ -4,7 +4,7 @@ import { sharedStyles } from "../style/SharedStyles";
 function ChallengesAdminPage() {
   const [challenges, setChallenges] = useState([]);
   const [leagues, setLeagues] = useState([]);
-  const [newChallenge, setNewChallenge] = useState({ name: "", description: "", points: 0, leagueId: "" });
+  const [newChallenge, setNewChallenge] = useState({ name: "", description: "", points: 0, leagueIds: [] });
   const [editingId, setEditingId] = useState(null);
 
   const token = localStorage.getItem("jwtToken");
@@ -36,9 +36,22 @@ function ChallengesAdminPage() {
 
   useEffect(() => { fetchChallenges(); fetchLeagues(); }, []);
 
+  const toggleLeague = (leagueId) => {
+    setNewChallenge(prev => ({
+      ...prev,
+      leagueIds: prev.leagueIds.includes(leagueId)
+        ? prev.leagueIds.filter(id => id !== leagueId)
+        : [...prev.leagueIds, leagueId]
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!token) return;
+    if (newChallenge.leagueIds.length === 0) {
+      alert("Seleziona almeno una lega.");
+      return;
+    }
     const method = editingId ? "PUT" : "POST";
     const url = editingId
       ? `http://localhost:5247/api/challenges/${editingId}`
@@ -46,10 +59,15 @@ function ChallengesAdminPage() {
     try {
       const res = await fetch(url, {
         method, headers,
-        body: JSON.stringify({ ...newChallenge, points: parseInt(newChallenge.points) || 0, leagueId: parseInt(newChallenge.leagueId) || 0 })
+        body: JSON.stringify({
+          Name: newChallenge.name,
+          Description: newChallenge.description,
+          Points: parseInt(newChallenge.points) || 0,
+          LeagueIds: newChallenge.leagueIds
+        })
       });
       if (!res.ok) return;
-      setNewChallenge({ name: "", description: "", points: 0, leagueId: "" });
+      setNewChallenge({ name: "", description: "", points: 0, leagueIds: [] });
       setEditingId(null);
       fetchChallenges();
     } catch (err) { console.error(err); }
@@ -65,12 +83,22 @@ function ChallengesAdminPage() {
 
   const handleEdit = (challenge) => {
     setEditingId(challenge.id);
-    setNewChallenge({ name: challenge.name || "", description: challenge.description || "", points: challenge.points || 0, leagueId: challenge.leagueId || "" });
+    setNewChallenge({
+      name: challenge.name || "",
+      description: challenge.description || "",
+      points: challenge.points || 0,
+      // il backend può restituire leagueIds oppure leagueId come lista
+      leagueIds: Array.isArray(challenge.leagueIds)
+        ? challenge.leagueIds
+        : challenge.leagueId
+          ? [challenge.leagueId]
+          : []
+    });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setNewChallenge({ name: "", description: "", points: 0, leagueId: "" });
+    setNewChallenge({ name: "", description: "", points: 0, leagueIds: [] });
   };
 
   return (
@@ -105,7 +133,7 @@ function ChallengesAdminPage() {
 
           <div className="pg-grid-2" style={{ alignItems: "start" }}>
 
-            {/* FORM */}
+            {/* ── FORM ── */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -115,35 +143,79 @@ function ChallengesAdminPage() {
               </div>
               <div style={{ padding: "20px 24px" }}>
                 <form onSubmit={handleSubmit}>
+
                   <div className="pg-field">
                     <label className="pg-field-label">Nome</label>
                     <input className="pg-input" placeholder="Es. Corri 5km" value={newChallenge.name}
                       onChange={e => setNewChallenge({ ...newChallenge, name: e.target.value })} required />
                   </div>
+
                   <div className="pg-field">
                     <label className="pg-field-label">Descrizione</label>
                     <textarea className="pg-textarea" placeholder="Descrivi la sfida..." value={newChallenge.description}
                       onChange={e => setNewChallenge({ ...newChallenge, description: e.target.value })} required />
                   </div>
-                  <div className="pg-form-row">
-                    <div className="pg-field">
-                      <label className="pg-field-label">Punti</label>
-                      <input type="number" className="pg-input" min="0" value={newChallenge.points}
-                        onChange={e => setNewChallenge({ ...newChallenge, points: e.target.value })} required />
-                    </div>
-                    <div className="pg-field">
-                      <label className="pg-field-label">Lega</label>
-                      <select className="pg-select" value={newChallenge.leagueId}
-                        onChange={e => setNewChallenge({ ...newChallenge, leagueId: e.target.value })} required>
-                        <option value="">Seleziona lega...</option>
-                        {Array.isArray(leagues) && leagues.map(l => (
-                          <option key={l.id} value={l.id}>{l.name}</option>
-                        ))}
-                      </select>
-                    </div>
+
+                  <div className="pg-field">
+                    <label className="pg-field-label">Punti</label>
+                    <input type="number" className="pg-input" min="0" value={newChallenge.points}
+                      onChange={e => setNewChallenge({ ...newChallenge, points: e.target.value })} required />
                   </div>
-                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-                    <button type="submit" className={`pg-btn ${editingId ? "pg-btn-warning" : "pg-btn-primary"}`} style={{ flex: 1 }}>
+
+                  {/* MULTI-LEGA */}
+                  <div className="pg-field">
+                    <label className="pg-field-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      Leghe
+                      {newChallenge.leagueIds.length > 0 && (
+                        <span style={{
+                          fontSize: "0.63rem", fontWeight: 700,
+                          background: "var(--sun-light)", border: "1px solid var(--sun-mid)",
+                          color: "var(--sun-dark)", padding: "2px 8px", borderRadius: 20
+                        }}>
+                          {newChallenge.leagueIds.length} selezionate
+                        </span>
+                      )}
+                    </label>
+
+                    {leagues.length === 0 ? (
+                      <p style={{ fontSize: "0.78rem", color: "var(--text-light)", paddingTop: 6 }}>
+                        Nessuna lega disponibile
+                      </p>
+                    ) : (
+                      <div style={{
+                        display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7,
+                        maxHeight: 200, overflowY: "auto", paddingRight: 2
+                      }}>
+                        {leagues.map(l => {
+                          const selected = newChallenge.leagueIds.includes(l.id);
+                          return (
+                            <label key={l.id} onClick={() => toggleLeague(l.id)} style={{
+                              display: "flex", alignItems: "center", gap: 8,
+                              padding: "8px 11px",
+                              background: selected ? "var(--sun-light)" : "#f9faff",
+                              border: `1px solid ${selected ? "var(--sun)" : "var(--border)"}`,
+                              borderRadius: "var(--radius-sm)",
+                              cursor: "pointer", transition: "all 0.15s", userSelect: "none"
+                            }}>
+                              <input type="checkbox" readOnly checked={selected}
+                                style={{ accentColor: "var(--sun-dark)", width: 13, height: 13, flexShrink: 0 }} />
+                              <span style={{
+                                fontSize: "0.78rem", fontWeight: 500, color: "var(--text)",
+                                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+                              }}>
+                                {l.name}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+                    <button type="submit"
+                      className={`pg-btn ${editingId ? "pg-btn-warning" : "pg-btn-primary"}`}
+                      style={{ flex: 1 }}>
                       {editingId ? "✓ Aggiorna" : "+ Aggiungi sfida"}
                     </button>
                     {editingId && (
@@ -154,7 +226,7 @@ function ChallengesAdminPage() {
               </div>
             </div>
 
-            {/* TABLE */}
+            {/* ── TABLE ── */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -168,7 +240,7 @@ function ChallengesAdminPage() {
                     <tr>
                       <th>Nome</th>
                       <th>Punti</th>
-                      <th>Lega</th>
+                      <th>Leghe</th>
                       <th>Azioni</th>
                     </tr>
                   </thead>
@@ -180,10 +252,27 @@ function ChallengesAdminPage() {
                       <tr key={c.id}>
                         <td>
                           <div style={{ fontWeight: 600 }}>{c.name}</div>
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>{c.description}</div>
+                          <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>
+                            {c.description}
+                          </div>
                         </td>
-                        <td><span className="pg-badge pg-badge-green">+{c.points}</span></td>
-                        <td className="muted">{c.leagueName || "—"}</td>
+                        <td>
+                          <span className="pg-badge pg-badge-green">+{c.points}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {Array.isArray(c.leagueIds) && c.leagueIds.length > 0
+                              ? c.leagueIds.map(lid => {
+                                  const league = leagues.find(l => l.id === lid);
+                                  return league
+                                    ? <span key={lid} className="pg-badge pg-badge-sun"
+                                        style={{ fontSize: "0.62rem" }}>{league.name}</span>
+                                    : null;
+                                })
+                              : <span style={{ color: "var(--text-light)", fontSize: "0.75rem" }}>—</span>
+                            }
+                          </div>
+                        </td>
                         <td>
                           <div style={{ display: "flex", gap: 6 }}>
                             <button className="pg-btn pg-btn-warning pg-btn-sm" onClick={() => handleEdit(c)}>✏️</button>
@@ -196,8 +285,8 @@ function ChallengesAdminPage() {
                 </table>
               </div>
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
     </>

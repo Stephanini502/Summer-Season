@@ -1,3 +1,4 @@
+// ChallengeService.cs
 using SummerSeason.models;
 using SummerSeason.data;
 using Microsoft.EntityFrameworkCore;
@@ -15,18 +16,20 @@ public class ChallengeService
 
     public async Task<ChallengeResponseDto> AddChallenge(ChallengeRequestDto dto)
     {
+        var leagues = await _context.Leagues
+            .Where(l => dto.LeagueIds.Contains(l.Id))
+            .ToListAsync();
+
         var newChallenge = new Challenge
         {
             Name = dto.Name,
             Description = dto.Description,
             Points = dto.Points,
-            LeagueId = dto.LeagueId
+            Leagues = leagues
         };
 
         await _context.Challenges.AddAsync(newChallenge);
         await _context.SaveChangesAsync();
-
-        await _context.Entry(newChallenge).Reference(c => c.League).LoadAsync();
 
         return ToDtoMappers.ToChallengeDto(newChallenge);
     }
@@ -34,9 +37,9 @@ public class ChallengeService
     public async Task<List<ChallengeResponseDto>> GetChallenges()
     {
         var challenges = await _context.Challenges
-                                       .Where(c => c.DeletedAt == null || c.DeletedAt == DateTime.MinValue)
-                                       .Include(c => c.League)
-                                       .ToListAsync();
+            .Where(c => c.DeletedAt == null || c.DeletedAt == DateTime.MinValue)
+            .Include(c => c.Leagues)   
+            .ToListAsync();
 
         return challenges.Select(c => ToDtoMappers.ToChallengeDto(c)).ToList();
     }
@@ -44,27 +47,34 @@ public class ChallengeService
     public async Task<List<ChallengeResponseDto>> GetChallengesByLeagueId(int leagueId)
     {
         var challenges = await _context.Challenges
-                                       .Where(c => c.LeagueId == leagueId &&
-                                                   (c.DeletedAt == null || c.DeletedAt == DateTime.MinValue))
-                                       .Include(c => c.League)
-                                       .ToListAsync();
+            .Where(c => c.Leagues.Any(l => l.Id == leagueId) &&
+                        (c.DeletedAt == null || c.DeletedAt == DateTime.MinValue))
+            .Include(c => c.Leagues)
+            .ToListAsync();
 
         return challenges.Select(c => ToDtoMappers.ToChallengeDto(c)).ToList();
     }
 
     public async Task<ChallengeResponseDto> UpdateChallenges(int id, ChallengeRequestDto dto)
     {
-        var challenge = await _context.Challenges.FindAsync(id);
+        var challenge = await _context.Challenges
+            .Include(c => c.Leagues)
+            .FirstOrDefaultAsync(c => c.Id == id);
+
         if (challenge == null)
             throw new Exception($"Challenge not found with id: {id}");
 
         challenge.Name = dto.Name;
         challenge.Description = dto.Description;
         challenge.Points = dto.Points;
-        challenge.LeagueId = dto.LeagueId;
+
+        var leagues = await _context.Leagues
+            .Where(l => dto.LeagueIds.Contains(l.Id))
+            .ToListAsync();
+
+        challenge.Leagues = leagues;
 
         await _context.SaveChangesAsync();
-        await _context.Entry(challenge).Reference(c => c.League).LoadAsync();
 
         return ToDtoMappers.ToChallengeDto(challenge);
     }
@@ -75,7 +85,7 @@ public class ChallengeService
         if (challenge == null)
             throw new Exception($"Challenge not found with id: {id}");
 
-        challenge.DeletedAt = DateTime.Now; 
+        challenge.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();
     }
 }

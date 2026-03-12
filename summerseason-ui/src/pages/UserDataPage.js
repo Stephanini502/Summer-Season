@@ -16,7 +16,6 @@ function UserDataPage() {
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
-
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
   const normalizeDatas = (data) => {
@@ -70,15 +69,18 @@ function UserDataPage() {
 
   const getUserPosition = (leagueId) => {
     const ranking = rankings[leagueId] || [];
-    const index = ranking.findIndex(u => (u.userName || "").toLowerCase() === user.userName.toLowerCase());
+    const index = ranking.findIndex(u =>
+      (u.userName || "").toLowerCase() === (user?.userName || "").toLowerCase()
+    );
     return index >= 0 ? index + 1 : null;
   };
 
-  const positionBadgeClass = (pos) => {
+  const positionLabel = (pos) => {
     if (!pos) return null;
-    if (pos === 1) return "pg-badge pg-badge-yellow";
-    if (pos <= 3) return "pg-badge pg-badge-blue";
-    return "pg-badge pg-badge-blue";
+    if (pos === 1) return { emoji: "🥇", badge: "pg-badge-sun" };
+    if (pos === 2) return { emoji: "🥈", badge: "pg-badge-blue" };
+    if (pos === 3) return { emoji: "🥉", badge: "pg-badge-blue" };
+    return { emoji: "", badge: "pg-badge-blue" };
   };
 
   if (loading) return (
@@ -122,7 +124,7 @@ function UserDataPage() {
 
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
 
-            {/* SIDEBAR */}
+            {/* ── SIDEBAR ── */}
             <div className="pg-col" style={{ gap: 20 }}>
 
               {/* PROFILO */}
@@ -135,10 +137,12 @@ function UserDataPage() {
                 </div>
                 <div style={{ padding: "24px", textAlign: "center" }}>
                   <div className="pg-avatar">{initials}</div>
-                  <h3 style={{ fontWeight: 800, fontSize: "1.1rem", marginBottom: 4 }}>
+                  <h3 style={{ fontWeight: 800, fontSize: "1.15rem", marginBottom: 4 }}>
                     {user.name} {user.surname}
                   </h3>
-                  <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 14 }}>{user.userName}</p>
+                  <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 14 }}>
+                    {user.userName}
+                  </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
                     {roles.map((r, i) => (
                       <span key={i} className="pg-badge pg-badge-blue">{r}</span>
@@ -158,7 +162,7 @@ function UserDataPage() {
                 <div style={{ padding: "16px 24px" }}>
                   <div className="pg-info-row">
                     <span className="pg-info-row-label">Leghe</span>
-                    <span className="pg-info-row-value" style={{ color: "var(--blue-primary)", fontSize: "1.3rem", fontWeight: 800 }}>
+                    <span className="pg-info-row-value" style={{ color: "var(--ocean)", fontSize: "1.3rem", fontWeight: 800 }}>
                       {leagues.length}
                     </span>
                   </div>
@@ -172,71 +176,142 @@ function UserDataPage() {
               </div>
             </div>
 
-            {/* MAIN */}
-            <div className="pg-col" style={{ gap: 20 }}>
+            {/* ── MAIN ── */}
+            <div className="pg-col" style={{ gap: 0 }}>
 
-              {/* LE MIE LEGHE */}
+              {/* LEGHE + CLASSIFICA UNIFICATA */}
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
                   <div className="pg-card-header-left">
                     <div className="pg-card-icon">🏆</div>
                     <h2 className="pg-card-title">Le mie leghe</h2>
                   </div>
+                  {leagues.length > 0 && (
+                    <span className="pg-badge pg-badge-sun">{leagues.length} leghe</span>
+                  )}
                 </div>
-                <div className="pg-table-wrap">
-                  <table className="pg-table">
-                    <thead>
-                      <tr><th>Nome lega</th><th>Data creazione</th></tr>
-                    </thead>
-                    <tbody>
-                      {leagues.length > 0 ? leagues.map(l => (
-                        <tr key={l.id} className="clickable" onClick={() => navigate(`/league/${l.id}`)}>
-                          <td className="bold">{l.name}</td>
-                          <td className="muted">{new Date(l.creationDate).toLocaleDateString("it-IT")}</td>
-                        </tr>
-                      )) : (
-                        <tr><td colSpan="2"><div className="pg-empty">Nessuna lega</div></td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
 
-              {/* CLASSIFICHE */}
-              <div className="pg-card" style={{ marginBottom: 0 }}>
-                <div className="pg-card-header">
-                  <div className="pg-card-header-left">
-                    <div className="pg-card-icon">🥇</div>
-                    <h2 className="pg-card-title">Posizione nelle classifiche</h2>
+                {leagues.length === 0 ? (
+                  <div className="pg-empty" style={{ padding: "48px 0" }}>
+                    <div style={{ fontSize: "2rem", marginBottom: 10 }}>🏝️</div>
+                    <p style={{ fontWeight: 600, marginBottom: 4 }}>Non sei ancora in nessuna lega</p>
+                    <p>Chiedi a un admin di aggiungerti</p>
                   </div>
-                </div>
-                <div className="pg-table-wrap">
-                  <table className="pg-table">
-                    <thead>
-                      <tr><th>Lega</th><th>Posizione</th></tr>
-                    </thead>
-                    <tbody>
-                      {leagues.length > 0 ? leagues.map(league => {
-                        const pos = getUserPosition(league.id);
-                        return (
-                          <tr key={league.id}>
-                            <td className="bold">{league.name}</td>
-                            <td>
-                              {pos
-                                ? <span className={positionBadgeClass(pos)}>{pos === 1 ? "🥇 " : pos === 2 ? "🥈 " : pos === 3 ? "🥉 " : ""}#{pos}</span>
-                                : <span style={{ color: "var(--text-light)" }}>—</span>
-                              }
-                            </td>
-                          </tr>
-                        );
-                      }) : (
-                        <tr><td colSpan="2"><div className="pg-empty">Nessuna lega</div></td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                ) : (
+                  <div>
+                    {leagues.map((league, leagueIdx) => {
+                      const pos = getUserPosition(league.id);
+                      const label = positionLabel(pos);
+                      const ranking = rankings[league.id] || [];
 
+                      return (
+                        <div key={league.id} style={{
+                          borderBottom: leagueIdx < leagues.length - 1
+                            ? "1px solid var(--border)" : "none"
+                        }}>
+                          {/* Riga lega — cliccabile */}
+                          <div
+                            onClick={() => navigate(`/league/${league.id}`)}
+                            style={{
+                              display: "flex", alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "14px 24px",
+                              cursor: "pointer",
+                              background: "linear-gradient(to right, #fafbff, #fffdf5)",
+                              transition: "background 0.15s",
+                              gap: 12
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = "var(--ocean-light)"}
+                            onMouseOut={e => e.currentTarget.style.background = "linear-gradient(to right, #fafbff, #fffdf5)"}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              {/* Posizione badge */}
+                              {pos ? (
+                                <span className={`pg-badge ${label.badge}`} style={{
+                                  fontSize: "0.75rem", padding: "5px 12px",
+                                  fontWeight: 800, flexShrink: 0
+                                }}>
+                                  {label.emoji} #{pos}
+                                </span>
+                              ) : (
+                                <span style={{
+                                  width: 36, height: 28, borderRadius: 20,
+                                  background: "var(--border)", display: "inline-block", flexShrink: 0
+                                }} />
+                              )}
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--text)" }}>
+                                  {league.name}
+                                </div>
+                                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 1 }}>
+                                  Creata il {new Date(league.creationDate).toLocaleDateString("it-IT")}
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                              {/* Punteggio utente in questa lega */}
+                              {ranking.length > 0 && (() => {
+                                const me = ranking.find(u =>
+                                  (u.userName || "").toLowerCase() === (user.userName || "").toLowerCase()
+                                );
+                                return me ? (
+                                  <span className="pg-badge pg-badge-green">
+                                    {me.totalPoints} pts
+                                  </span>
+                                ) : null;
+                              })()}
+                              <span style={{ color: "var(--text-light)", fontSize: "0.8rem" }}>→</span>
+                            </div>
+                          </div>
+
+                          {/* Mini-classifica (top 3) */}
+                          {ranking.length > 0 && (
+                            <div style={{
+                              padding: "0 24px 14px",
+                              display: "flex", gap: 8, flexWrap: "wrap"
+                            }}>
+                              {ranking.slice(0, 3).map((u, idx) => {
+                                const isMe = (u.userName || "").toLowerCase() === (user.userName || "").toLowerCase();
+                                const medals = ["🥇", "🥈", "🥉"];
+                                return (
+                                  <div key={idx} style={{
+                                    display: "flex", alignItems: "center", gap: 6,
+                                    padding: "5px 12px",
+                                    background: isMe ? "var(--sun-light)" : "var(--bg)",
+                                    border: `1px solid ${isMe ? "var(--sun-mid)" : "var(--border)"}`,
+                                    borderRadius: 20,
+                                    fontSize: "0.74rem",
+                                    fontWeight: isMe ? 700 : 500,
+                                    color: "var(--text)"
+                                  }}>
+                                    <span>{medals[idx]}</span>
+                                    <span>{u.name} {u.surname}</span>
+                                    <span style={{
+                                      color: "var(--text-muted)", fontSize: "0.68rem"
+                                    }}>
+                                      {u.totalPoints} pts
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                              {ranking.length > 3 && (
+                                <div style={{
+                                  display: "flex", alignItems: "center",
+                                  padding: "5px 12px",
+                                  background: "var(--bg)", border: "1px solid var(--border)",
+                                  borderRadius: 20, fontSize: "0.72rem", color: "var(--text-muted)"
+                                }}>
+                                  +{ranking.length - 3} altri
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

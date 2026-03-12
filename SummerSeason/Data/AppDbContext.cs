@@ -52,10 +52,9 @@ namespace SummerSeason.data
                 .UsingEntity(j => j.ToTable("UserLeagues")); 
 
             modelBuilder.Entity<Challenge>()
-                .HasOne(c => c.League)
+                .HasMany(c => c.Leagues)        // navigation property plurale
                 .WithMany(l => l.Challenges)
-                .HasForeignKey(c => c.LeagueId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .UsingEntity(j => j.ToTable("ChallengeLeagues"));
 
             modelBuilder.Entity<Result>()
                 .HasOne(r => r.User)

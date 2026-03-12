@@ -14,7 +14,8 @@ public class Challenge : BaseEntity
     public String? Description{get; set;}
     public int Points{get; set;}
     public List<Result>? Results{get; set;}
-    public int LeagueId { get; set; }
-    [ForeignKey("LeagueId")]
-    public League? League{get; set;}
+    public List<League> Leagues { get; set; } = new();
+
+    [NotMapped]
+    public List<int> LeagueIds => Leagues?.Select(l => l.Id).ToList() ?? new(); 
 }

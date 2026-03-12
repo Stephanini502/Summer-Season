@@ -8,5 +8,5 @@ public class ChallengeRequestDto
 
     public int Points{get; set;}
 
-    public int LeagueId{get; set;}
+    public List<int> LeagueIds{get; set;}
 }

@@ -1,10 +1,10 @@
+// ToDtoMappers.cs
 namespace SummerSeason.Mappers;
 using SummerSeason.models;
 using SummerSeason.Dtos;
 
 public class ToDtoMappers
 {
-    
     public static UserResponseDto ToUserDto(User u) =>
         new UserResponseDto
         {
@@ -21,7 +21,9 @@ public class ToDtoMappers
             Id = l.Id,
             Name = l.Name ?? "-",
             LeagueAdminId = l.LeagueAdminId,
-            LeagueAdminName = l.LeagueAdmin != null ? $"{l.LeagueAdmin.Name} {l.LeagueAdmin.Surname}" : "-",
+            LeagueAdminName = l.LeagueAdmin != null
+                ? $"{l.LeagueAdmin.Name} {l.LeagueAdmin.Surname}"
+                : "-",
             Users = l.Users?.Select(ToUserDto).ToList() ?? new List<UserResponseDto>(),
             CreationDate = l.CreationDate
         };
@@ -29,12 +31,16 @@ public class ToDtoMappers
     public static ChallengeResponseDto ToChallengeDto(Challenge c) =>
         new ChallengeResponseDto
         {
-        Id = c.Id,
-        Name = c.Name ?? "-",
-        Description = c.Description ?? "-",
-        Points = c.Points,
-        LeagueId = c.LeagueId,
-        LeagueName = c.League?.Name ?? "-"
+            Id = c.Id,
+            Name = c.Name ?? "-",
+            Description = c.Description ?? "-",
+            Points = c.Points,
+            // Ricava gli id dalla navigation property Leagues
+            LeagueIds = c.Leagues?.Select(l => l.Id).ToList() ?? new List<int>(),
+            // Per retrocompatibilità col frontend che mostra un solo nome,
+            // mostra i nomi di tutte le leghe separati da virgola
+            LeagueName = c.Leagues != null && c.Leagues.Any()
+                ? string.Join(", ", c.Leagues.Select(l => l.Name ?? "-"))
+                : "-"
         };
-
 }
