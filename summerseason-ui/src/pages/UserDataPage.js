@@ -124,10 +124,8 @@ function UserDataPage() {
 
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
 
-            {/* ── SIDEBAR ── */}
             <div className="pg-col" style={{ gap: 20 }}>
 
-              {/* PROFILO */}
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
                   <div className="pg-card-header-left">
@@ -151,7 +149,6 @@ function UserDataPage() {
                 </div>
               </div>
 
-              {/* STATISTICHE */}
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
                   <div className="pg-card-header-left">
@@ -176,10 +173,8 @@ function UserDataPage() {
               </div>
             </div>
 
-            {/* ── MAIN ── */}
             <div className="pg-col" style={{ gap: 0 }}>
 
-              {/* LEGHE + CLASSIFICA UNIFICATA */}
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
                   <div className="pg-card-header-left">
@@ -209,7 +204,6 @@ function UserDataPage() {
                           borderBottom: leagueIdx < leagues.length - 1
                             ? "1px solid var(--border)" : "none"
                         }}>
-                          {/* Riga lega — cliccabile */}
                           <div
                             onClick={() => navigate(`/league/${league.id}`)}
                             style={{
@@ -225,7 +219,6 @@ function UserDataPage() {
                             onMouseOut={e => e.currentTarget.style.background = "linear-gradient(to right, #fafbff, #fffdf5)"}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                              {/* Posizione badge */}
                               {pos ? (
                                 <span className={`pg-badge ${label.badge}`} style={{
                                   fontSize: "0.75rem", padding: "5px 12px",
@@ -249,7 +242,6 @@ function UserDataPage() {
                               </div>
                             </div>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                              {/* Punteggio utente in questa lega */}
                               {ranking.length > 0 && (() => {
                                 const me = ranking.find(u =>
                                   (u.userName || "").toLowerCase() === (user.userName || "").toLowerCase()
@@ -264,7 +256,6 @@ function UserDataPage() {
                             </div>
                           </div>
 
-                          {/* Mini-classifica (top 3) */}
                           {ranking.length > 0 && (
                             <div style={{
                               padding: "0 24px 14px",

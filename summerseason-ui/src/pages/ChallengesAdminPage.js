@@ -87,7 +87,6 @@ function ChallengesAdminPage() {
       name: challenge.name || "",
       description: challenge.description || "",
       points: challenge.points || 0,
-      // il backend può restituire leagueIds oppure leagueId come lista
       leagueIds: Array.isArray(challenge.leagueIds)
         ? challenge.leagueIds
         : challenge.leagueId
@@ -133,7 +132,6 @@ function ChallengesAdminPage() {
 
           <div className="pg-grid-2" style={{ alignItems: "start" }}>
 
-            {/* ── FORM ── */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -162,7 +160,6 @@ function ChallengesAdminPage() {
                       onChange={e => setNewChallenge({ ...newChallenge, points: e.target.value })} required />
                   </div>
 
-                  {/* MULTI-LEGA */}
                   <div className="pg-field">
                     <label className="pg-field-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       Leghe
@@ -226,7 +223,6 @@ function ChallengesAdminPage() {
               </div>
             </div>
 
-            {/* ── TABLE ── */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">

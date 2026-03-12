@@ -136,7 +136,6 @@ function LeagueDataAdminPage() {
       <div className="pg-root">
         <div className="pg-content">
 
-          {/* HERO */}
           <div className="pg-hero">
             <div>
               <p style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>Admin · Gestione Lega</p>
@@ -146,7 +145,6 @@ function LeagueDataAdminPage() {
             <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
           </div>
 
-          {/* STATS */}
           <div className="pg-stats">
             <div className="pg-stat-card">
               <div>
@@ -166,7 +164,6 @@ function LeagueDataAdminPage() {
 
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
 
-            {/* SIDEBAR */}
             <div className="pg-col" style={{ gap: 20 }}>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
@@ -232,7 +229,6 @@ function LeagueDataAdminPage() {
               </div>
             </div>
 
-            {/* MAIN */}
             <div className="pg-col" style={{ gap: 20 }}>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>

@@ -13,7 +13,6 @@ function ChallengesPage() {
 
   const fetchChallengesForUser = async () => {
     try {
-      // 1. Recupera le leghe dell'utente
       const leaguesRes = await fetch(`http://localhost:5247/api/leagues/user/${userId}`, { headers });
       if (!leaguesRes.ok) { setChallenges([]); return; }
 
@@ -24,19 +23,16 @@ function ChallengesPage() {
 
       if (leagues.length === 0) { setChallenges([]); return; }
 
-      // 2. Per ogni lega, recupera le sfide (GetChallengesByLeagueId)
       const allChallengesNested = await Promise.all(
         leagues.map(async (league) => {
           const res = await fetch(`http://localhost:5247/api/challenges/${league.id}`, { headers });
           if (!res.ok) return [];
           const data = await res.json();
           const list = Array.isArray(data) ? data : data.$values ?? [];
-          // Arricchisce ogni sfida col nome della lega per mostrarlo nella card
           return list.map(c => ({ ...c, leagueName: c.leagueName || league.name }));
         })
       );
 
-      // 3. Deduplica per id (una sfida può essere in più leghe)
       const seen = new Set();
       const unique = allChallengesNested.flat().filter(c => {
         if (seen.has(c.id)) return false;

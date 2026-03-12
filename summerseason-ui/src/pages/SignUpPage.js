@@ -24,7 +24,7 @@ function SignUpPage({ onLoginSuccess }) {
 
       alert("Registrazione avvenuta con successo! Ora puoi fare il login.");
       setRegisterForm({ name: "", surname: "", username: "", password: "" });
-      navigate("/"); // torna alla pagina principale/login
+      navigate("/"); 
     } catch (err) {
       setError(err.message);
     }

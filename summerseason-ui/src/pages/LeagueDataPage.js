@@ -43,7 +43,6 @@ function LeagueDataPage() {
       const [leagueData, rankingData, challengesData] = await Promise.all([
         fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
-        // GetChallengesByLeagueId: restituisce solo le sfide che hanno questo id nella lista LeagueIds
         fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(r => r.json()),
       ]);
       setLeague(leagueData);
@@ -97,7 +96,6 @@ function LeagueDataPage() {
       <div className="pg-root">
         <div className="pg-content">
 
-          {/* HERO */}
           <div className="pg-hero">
             <div>
               <p className="pg-hero-eyebrow">Pagina Lega</p>
@@ -111,7 +109,6 @@ function LeagueDataPage() {
             </button>
           </div>
 
-          {/* STATS */}
           <div className="pg-stats">
             <div className="pg-stat-card">
               <div>
@@ -146,10 +143,8 @@ function LeagueDataPage() {
             )}
           </div>
 
-          {/* MAIN GRID */}
           <div className="pg-grid-2">
 
-            {/* CLASSIFICA */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -175,7 +170,6 @@ function LeagueDataPage() {
               </ul>
             </div>
 
-            {/* SFIDE DELLA LEGA */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
