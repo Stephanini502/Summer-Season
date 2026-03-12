@@ -4,12 +4,22 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using SummerSeason.Services;
+using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var key = "KEY_TEST_0000_ASDFGHJKLASDFGHJKL";
 
+var cloudinarySettings = builder.Configuration.GetSection("Cloudinary");
+var account = new Account(
+    cloudinarySettings["CloudName"],    
+    cloudinarySettings["ApiKey"],
+    cloudinarySettings["ApiSecret"]
+);
+var cloudinary = new Cloudinary(account);
+builder.Services.AddSingleton(cloudinary);
 
+// ── JWT ──
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -44,10 +54,7 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod());
 });
 
-builder.Services.AddControllers();
-
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySQL(connectionString));
 
@@ -58,8 +65,9 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<LeagueService>();
 builder.Services.AddScoped<ChallengeService>();
 builder.Services.AddScoped<ResultService>();
-var app = builder.Build();
+builder.Services.AddScoped<MediaService>();
 
+var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
@@ -67,14 +75,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-
 app.UseHttpsRedirection();
-
 app.UseCors("AllowedFrontend");
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

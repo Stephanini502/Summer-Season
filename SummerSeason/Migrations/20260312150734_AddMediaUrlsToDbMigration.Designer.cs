@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SummerSeason.data;
 
@@ -10,9 +11,11 @@ using SummerSeason.data;
 namespace SummerSeason.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260312150734_AddMediaUrlsToDbMigration")]
+    partial class AddMediaUrlsToDbMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -66,6 +69,9 @@ namespace SummerSeason.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
@@ -74,6 +80,9 @@ namespace SummerSeason.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("VideoUrl")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -97,6 +106,9 @@ namespace SummerSeason.Migrations
                     b.Property<DateTime>("DeletedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime>("LastUpdate")
                         .HasColumnType("datetime(6)");
 
@@ -109,54 +121,14 @@ namespace SummerSeason.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("VideoUrl")
+                        .HasColumnType("longtext");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LeagueAdminId");
 
                     b.ToTable("Leagues");
-                });
-
-            modelBuilder.Entity("SummerSeason.models.Media", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ChallengeId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("DATETIME")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<DateTime>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int?>("LeagueId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PublicId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChallengeId");
-
-                    b.HasIndex("LeagueId");
-
-                    b.ToTable("Media");
                 });
 
             modelBuilder.Entity("SummerSeason.models.Result", b =>
@@ -278,23 +250,6 @@ namespace SummerSeason.Migrations
                     b.Navigation("LeagueAdmin");
                 });
 
-            modelBuilder.Entity("SummerSeason.models.Media", b =>
-                {
-                    b.HasOne("SummerSeason.models.Challenge", "Challenge")
-                        .WithMany("Media")
-                        .HasForeignKey("ChallengeId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SummerSeason.models.League", "League")
-                        .WithMany("Media")
-                        .HasForeignKey("LeagueId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.Navigation("Challenge");
-
-                    b.Navigation("League");
-                });
-
             modelBuilder.Entity("SummerSeason.models.Result", b =>
                 {
                     b.HasOne("SummerSeason.models.Challenge", "Challenge")
@@ -316,14 +271,7 @@ namespace SummerSeason.Migrations
 
             modelBuilder.Entity("SummerSeason.models.Challenge", b =>
                 {
-                    b.Navigation("Media");
-
                     b.Navigation("Results");
-                });
-
-            modelBuilder.Entity("SummerSeason.models.League", b =>
-                {
-                    b.Navigation("Media");
                 });
 
             modelBuilder.Entity("SummerSeason.models.User", b =>

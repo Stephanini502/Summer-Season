@@ -14,6 +14,7 @@ namespace SummerSeason.data
         public DbSet<League> Leagues { get; set; }
         public DbSet<Challenge> Challenges { get; set; }
         public DbSet<Result> Results { get; set; }
+        public DbSet<Media> Media { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -24,7 +25,18 @@ namespace SummerSeason.data
         {
             base.OnModelCreating(modelBuilder);
             
+            modelBuilder.Entity<Media>()
+                .HasOne(m => m.Challenge)
+                .WithMany(c => c.Media)
+                .HasForeignKey(m => m.ChallengeId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Media>()
+                .HasOne(m => m.League)
+                .WithMany(l => l.Media)
+                .HasForeignKey(m => m.LeagueId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
             modelBuilder.Entity<User>()
             .Property(u => u.Roles)
             .HasConversion(
@@ -52,7 +64,7 @@ namespace SummerSeason.data
                 .UsingEntity(j => j.ToTable("UserLeagues")); 
 
             modelBuilder.Entity<Challenge>()
-                .HasMany(c => c.Leagues)        // navigation property plurale
+                .HasMany(c => c.Leagues)       
                 .WithMany(l => l.Challenges)
                 .UsingEntity(j => j.ToTable("ChallengeLeagues"));
 

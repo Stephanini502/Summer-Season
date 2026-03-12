@@ -13,6 +13,9 @@ public class Challenge : BaseEntity
     public String? Name{get; set;}
     public String? Description{get; set;}
     public int Points{get; set;}
+
+    public List<Media> Media { get; set; } = new();
+
     public List<Result>? Results{get; set;}
     public List<League> Leagues { get; set; } = new();
 

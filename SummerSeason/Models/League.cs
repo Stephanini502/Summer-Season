@@ -24,4 +24,7 @@ public class League : BaseEntity
     public DateOnly CreationDate{get; set;}
 
     public DateTime LastUpdate{get; set;}
+
+    public List<Media> Media { get; set; } = new();
+
 }
