@@ -53,4 +53,14 @@ public async Task AddResultAsync(ResultRequestDto requestResult)
         return usersDto;
     }
 
+    public async Task<int> GetWeeklyResults(int userId)
+    {
+        var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+
+        var weeklyPoints = await _context.Results
+            .Where(r => r.UserId == userId && r.CreatedAt >= oneWeekAgo)
+            .SumAsync(r => r.PointsAwarded);
+
+        return (int)weeklyPoints;
+    }
 }

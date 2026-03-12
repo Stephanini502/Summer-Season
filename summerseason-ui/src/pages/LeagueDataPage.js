@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { sharedStyles } from "../style/SharedStyles";
 
 function LeagueDataPage() {
   const { id } = useParams();
@@ -36,156 +37,161 @@ function LeagueDataPage() {
   });
 
   const fetchLeagueData = async () => {
-    setLoading(true);
-    setError("");
-
+    setLoading(true); setError("");
     const headers = { Authorization: `Bearer ${token}` };
-
     try {
       const [leagueData, rankingData, challengesData] = await Promise.all([
-        fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(res => res.json()),
-        fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(res => res.json()),
-        fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(res => res.json()),
+        fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(r => r.json()),
+        fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
+        fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(r => r.json()),
       ]);
-
       setLeague(leagueData);
-
-      // Ordina i partecipanti per punti decrescenti
-      const normalizedParticipants = normalizeValues(rankingData)
-        .map(normalizeUser)
-        .sort((a, b) => b.totalPoints - a.totalPoints);
-
-      setParticipants(normalizedParticipants);
+      setParticipants(normalizeValues(rankingData).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints));
       setChallenges(normalizeValues(challengesData).map(normalizeChallenge));
     } catch (err) {
-      console.error(err);
       setError("Errore caricamento dati lega");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchLeagueData();
-  }, [id]);
+  useEffect(() => { fetchLeagueData(); }, [id]);
 
-  if (loading) return <div className="p-5 text-center">Caricamento...</div>;
-  if (error) return <div className="p-5 text-danger text-center">{error}</div>;
-  if (!league) return <div className="p-5 text-center">Lega non trovata</div>;
+  if (loading) return (
+    <>
+      <style>{sharedStyles}</style>
+      <div className="pg-root"><div className="pg-loading"><div className="pg-spinner" /></div></div>
+    </>
+  );
 
-  // Primo in classifica
+  if (error) return (
+    <>
+      <style>{sharedStyles}</style>
+      <div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div>
+    </>
+  );
+
+  if (!league) return (
+    <>
+      <style>{sharedStyles}</style>
+      <div className="pg-root"><div className="pg-empty">Lega non trovata</div></div>
+    </>
+  );
+
   const topPlayer = participants.length > 0 ? participants[0] : null;
+  const totalPts = challenges.reduce((s, c) => s + (c.points || 0), 0);
+
+  const rankClass = (i) => i === 0 ? "pg-rank pg-rank-1" : i === 1 ? "pg-rank pg-rank-2" : i === 2 ? "pg-rank pg-rank-3" : "pg-rank";
 
   return (
-    <div style={{ backgroundColor: "#f5f6fa", minHeight: "100vh", paddingBottom: "50px" }}>
-      
-      {/* Hero Section */}
-      <div
-        className="d-flex flex-column flex-md-row justify-content-between align-items-center p-5 mb-5"
-        style={{
-          background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
-          color: "#fff",
-          borderRadius: "15px",
-          margin: "20px auto",
-          maxWidth: "1200px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
-        }}
-      >
-        <div>
-          <h1 className="fw-bold mb-2">{league.name}</h1>
-          <p className="mb-0">Creata il {new Date(league.creationDate).toLocaleDateString()}</p>
-        </div>
-        <button
-          className="btn btn-light btn-lg mt-3 mt-md-0"
-          style={{ fontWeight: "600" }}
-          onClick={() => navigate(`/challenges`)}
-        >
-          Vai alle sfide
-        </button>
-      </div>
+    <>
+      <style>{sharedStyles}</style>
+      <div className="pg-root">
+        <div className="pg-content">
 
-      <div className="container" style={{ maxWidth: "1200px" }}>
-        <div className="row g-4">
-
-          {/* Statistiche rapide */}
-          <div className="col-12 mb-4">
-            <div className="d-flex justify-content-between flex-wrap gap-3">
-              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
-                <h6 className="text-muted mb-1">Partecipanti</h6>
-                <h3 className="fw-bold">{participants.length}</h3>
-              </div>
-              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
-                <h6 className="text-muted mb-1">Sfide Totali</h6>
-                <h3 className="fw-bold">{challenges.length}</h3>
-              </div>
-              <div className="bg-white rounded shadow-sm flex-fill p-3 text-center">
-                <h6 className="text-muted mb-1">Leader attuale</h6>
-                <h5 className="fw-bold">{topPlayer ? `${topPlayer.name} ${topPlayer.surname}` : "N/A"}</h5>
-                <div className="text-muted small">{topPlayer ? topPlayer.userName : ""}</div>
-              </div>
+          {/* HERO */}
+          <div className="pg-hero">
+            <div>
+              <p style={{ fontSize: "0.72rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", opacity: 0.7, marginBottom: 6 }}>
+                Pagina Lega
+              </p>
+              <h1 className="pg-hero-title">{league.name}</h1>
+              <p className="pg-hero-sub">Creata il {new Date(league.creationDate).toLocaleDateString("it-IT")}</p>
             </div>
+            <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
           </div>
 
-          {/* Partecipanti */}
-          <div className="col-lg-6">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-light fw-semibold border-bottom">Partecipanti</div>
-              <ul className="list-group list-group-flush">
-                {participants.length > 0 ? (
-                  participants.map((u, idx) => (
-                    <li
-                      key={u.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                      style={{ cursor: "pointer", transition: "0.2s" }}
-                      onClick={() => navigate(`/user/${u.id}`)}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor="#f1f3f6"}
-                      onMouseOut={e => e.currentTarget.style.backgroundColor="transparent"}
-                    >
+          {/* STATS */}
+          <div className="pg-stats">
+            <div className="pg-stat-card">
+              <div>
+                <p className="pg-stat-label">Partecipanti</p>
+                <p className="pg-stat-value">{participants.length}</p>
+              </div>
+              <div className="pg-stat-icon">👥</div>
+            </div>
+            <div className="pg-stat-card">
+              <div>
+                <p className="pg-stat-label">Sfide</p>
+                <p className="pg-stat-value">{challenges.length}</p>
+              </div>
+              <div className="pg-stat-icon">🏁</div>
+            </div>
+            <div className="pg-stat-card">
+              <div>
+                <p className="pg-stat-label">Punti ottenibili</p>
+                <p className="pg-stat-value">{totalPts}</p>
+              </div>
+              <div className="pg-stat-icon pg-stat-icon-green">⭐</div>
+            </div>
+            {topPlayer && (
+              <div className="pg-stat-card">
+                <div>
+                  <p className="pg-stat-label">Leader attuale</p>
+                  <p className="pg-stat-value-sm">{topPlayer.name} {topPlayer.surname}</p>
+                  <p className="pg-stat-sub">{topPlayer.userName} · {topPlayer.totalPoints} pts</p>
+                </div>
+                <div className="pg-stat-icon pg-stat-icon-yellow">🥇</div>
+              </div>
+            )}
+          </div>
+
+          {/* MAIN GRID */}
+          <div className="pg-grid-2">
+
+            {/* PARTECIPANTI */}
+            <div className="pg-card" style={{ marginBottom: 0 }}>
+              <div className="pg-card-header">
+                <div className="pg-card-header-left">
+                  <div className="pg-card-icon">👥</div>
+                  <h2 className="pg-card-title">Classifica partecipanti</h2>
+                </div>
+              </div>
+              <ul className="pg-list">
+                {participants.length > 0 ? participants.map((u, idx) => (
+                  <li key={u.id} className="pg-list-item clickable" onClick={() => navigate(`/user/${u.id}`)}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span className={rankClass(idx)}>{idx + 1}</span>
                       <div>
-                        <div className="fw-semibold">{idx + 1}. {u.name} {u.surname}</div>
-                        <div className="text-muted small">{u.userName}</div>
+                        <div className="pg-list-item-name">{u.name} {u.surname}</div>
+                        <div className="pg-list-item-sub">{u.userName}</div>
                       </div>
-                      <span className="badge bg-primary rounded-pill">{u.totalPoints} pts</span>
-                    </li>
-                  ))
-                ) : (
-                  <p className="text-center text-muted my-3">Nessun partecipante nella lega</p>
+                    </div>
+                    <span className="pg-badge pg-badge-blue">{u.totalPoints} pts</span>
+                  </li>
+                )) : (
+                  <li><div className="pg-empty">Nessun partecipante</div></li>
                 )}
               </ul>
             </div>
-          </div>
 
-          {/* Sfide */}
-          <div className="col-lg-6">
-            <div className="card border-0 shadow-sm">
-              <div className="card-header bg-light fw-semibold border-bottom">Sfide</div>
-              <ul className="list-group list-group-flush">
-                {challenges.length > 0 ? (
-                  challenges.map((c) => (
-                    <li
-                      key={c.id}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                      style={{ transition: "0.2s" }}
-                      onMouseOver={e => e.currentTarget.style.backgroundColor="#f1f3f6"}
-                      onMouseOut={e => e.currentTarget.style.backgroundColor="transparent"}
-                    >
-                      <div>
-                        <div className="fw-semibold">{c.name}</div>
-                        <div className="text-muted small">{c.description}</div>
-                      </div>
-                      <span className="badge bg-success rounded-pill">{c.points} pts</span>
-                    </li>
-                  ))
-                ) : (
-                  <p className="text-center text-muted my-3">Nessuna sfida disponibile</p>
+            {/* SFIDE */}
+            <div className="pg-card" style={{ marginBottom: 0 }}>
+              <div className="pg-card-header">
+                <div className="pg-card-header-left">
+                  <div className="pg-card-icon">🏁</div>
+                  <h2 className="pg-card-title">Sfide della lega</h2>
+                </div>
+              </div>
+              <ul className="pg-list">
+                {challenges.length > 0 ? challenges.map(c => (
+                  <li key={c.id} className="pg-list-item">
+                    <div>
+                      <div className="pg-list-item-name">{c.name}</div>
+                      <div className="pg-list-item-sub">{c.description}</div>
+                    </div>
+                    <span className="pg-badge pg-badge-green">+{c.points} pts</span>
+                  </li>
+                )) : (
+                  <li><div className="pg-empty">Nessuna sfida disponibile</div></li>
                 )}
               </ul>
             </div>
-          </div>
 
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -37,5 +37,17 @@ public class ResultsController : ControllerBase
         return Ok(ranking);
     }
 
+    [HttpGet("weeklyResults/{userId}")]
+    public async Task<ActionResult<int>> getWeeklyResults(int userId)
+        {
+            try
+            {
+                return await _service.GetWeeklyResults(userId);
+            }catch(Exception e)
+            {
+                return BadRequest($"Error loading weekly results for user with id {userId}: " + e.Message);
+            }
+        }
+
     }
 }
