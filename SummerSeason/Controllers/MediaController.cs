@@ -17,6 +17,8 @@ public class MediaController : ControllerBase
     }
 
     [HttpPost("league/{leagueId}")]
+    [RequestSizeLimit(524288000)]     
+    [RequestFormLimits(MultipartBodyLengthLimit = 524288000)]
     public async Task<IActionResult> UploadForLeague(int leagueId, IFormFile file, [FromQuery] string type = "image")
     {
         if (file == null || file.Length == 0) return BadRequest("File mancante");
@@ -26,11 +28,13 @@ public class MediaController : ControllerBase
     }
 
     [HttpPost("challenge/{challengeId}")]
-    public async Task<IActionResult> UploadForChallenge(int challengeId, IFormFile file, [FromQuery] string type = "image")
+    [RequestSizeLimit(524288000)]     
+    [RequestFormLimits(MultipartBodyLengthLimit = 524288000)]
+    public async Task<IActionResult> UploadForChallenge(int challengeId, int leagueId, IFormFile file, [FromQuery] string type = "image")
     {
         if (file == null || file.Length == 0) return BadRequest("File mancante");
         var folder = $"summerseason/challenges/{type}s";
-        var media = await _mediaService.UploadAndSaveAsync(file, type, null, challengeId, folder);
+        var media = await _mediaService.UploadAndSaveAsync(file, type, leagueId, challengeId, folder);
         return Ok(new { media.Id, media.Url, media.Type });
     }
 

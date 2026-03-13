@@ -75,7 +75,7 @@ public class MediaService
     public async Task<List<Media>> GetByLeagueAsync(int leagueId)
     {
         return await _context.Media
-            .Where(m => m.LeagueId == leagueId && m.DeletedAt == DateTime.MinValue)
+            .Where(m => m.LeagueId == leagueId && m.DeletedAt == default(DateTime))
             .ToListAsync();
     }
 }

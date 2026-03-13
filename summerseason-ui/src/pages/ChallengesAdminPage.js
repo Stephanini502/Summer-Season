@@ -11,27 +11,31 @@ function ChallengesAdminPage() {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
   const fetchChallenges = async () => {
-    try {
-      if (!token) return;
-      const response = await fetch("http://localhost:5247/api/challenges", { headers });
-      if (!response.ok) { setChallenges([]); return; }
-      const data = await response.json();
-      if (Array.isArray(data)) setChallenges(data);
-      else if (data.$values) setChallenges(data.$values);
-      else setChallenges([]);
-    } catch (err) { setChallenges([]); }
+      try {
+        if (!token) return;
+        const response = await fetch("http://localhost:5247/api/challenges", { headers });
+        if (!response.ok) { setChallenges([]); return; }
+        const data = await response.json();
+        let challenges = Array.isArray(data) ? data : data.$values ?? [];
+        
+        challenges = challenges.map(c => ({
+          ...c,
+          leagueIds: c.leagueIds?.$values ?? c.leagueIds ?? []
+        }));
+        
+        setChallenges(challenges);
+      } catch (err) { setChallenges([]); }
   };
-
   const fetchLeagues = async () => {
-    try {
-      if (!token) return;
-      const response = await fetch("http://localhost:5247/api/leagues", { headers });
-      if (!response.ok) { setLeagues([]); return; }
-      const data = await response.json();
-      if (Array.isArray(data)) setLeagues(data);
-      else if (data.$values) setLeagues(data.$values);
-      else setLeagues([]);
-    } catch (err) { setLeagues([]); }
+      try {
+        if (!token) return;
+        const response = await fetch("http://localhost:5247/api/leagues", { headers });
+        if (!response.ok) { setLeagues([]); return; }
+        const data = await response.json();
+        let leaguesData = Array.isArray(data) ? data : data.$values ?? [];
+        leaguesData = leaguesData.map(l => ({ ...l, id: Number(l.id ?? l.Id) }));
+        setLeagues(leaguesData);
+      } catch (err) { setLeagues([]); }
   };
 
   useEffect(() => { fetchChallenges(); fetchLeagues(); }, []);

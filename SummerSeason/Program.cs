@@ -19,7 +19,6 @@ var account = new Account(
 var cloudinary = new Cloudinary(account);
 builder.Services.AddSingleton(cloudinary);
 
-// ── JWT ──
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

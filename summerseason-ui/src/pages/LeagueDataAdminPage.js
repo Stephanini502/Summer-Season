@@ -200,7 +200,7 @@ const refreshParticipantsAndRanking = () => {
     const { type, id: entityId, mediaType } = uploadingFor;
     const endpoint = type === "league"
       ? `http://localhost:5247/api/media/league/${entityId}?type=${mediaType}`
-      : `http://localhost:5247/api/media/challenge/${entityId}?type=${mediaType}`;
+      : `http://localhost:5247/api/media/challenge/${entityId}?type=${mediaType}&leagueId=${id}`;
 
     setUploadProgress(`Caricamento ${mediaType === "image" ? "immagine" : "video"}...`);
 

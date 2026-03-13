@@ -172,7 +172,9 @@ function AdminPage() {
                       <label className="adm-field-label">Ruolo</label>
                       <select className="adm-select" style={{ marginTop: "5px" }} value={userForm.role}
                         onChange={e => setUserForm({ ...userForm, role: e.target.value })}>
-                        {Object.keys(roleMap).map(r => <option key={r} value={r}>{roleMap[r]}</option>)}
+                        {Object.keys(roleMap)
+                        .filter(r => r !== "3")  
+                        .map(r => <option key={r} value={r}>{roleMap[r]}</option>)}
                       </select>
                     </div>
                     <button type="submit" className="adm-btn-submit">Crea utente</button>
