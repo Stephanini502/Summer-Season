@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { sharedStyles } from "../style/SharedStyles";
+import { darkPatch } from "../style/DarkPatch";
 
 function UserDataPage() {
   const { id } = useParams();
@@ -85,21 +86,21 @@ function UserDataPage() {
 
   if (loading) return (
     <>
-      <style>{sharedStyles}</style>
+      <style>{sharedStyles}{darkPatch}</style>
       <div className="pg-root"><div className="pg-loading"><div className="pg-spinner" /></div></div>
     </>
   );
 
   if (error) return (
     <>
-      <style>{sharedStyles}</style>
+      <style>{sharedStyles}{darkPatch}</style>
       <div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div>
     </>
   );
 
   if (!user) return (
     <>
-      <style>{sharedStyles}</style>
+      <style>{sharedStyles}{darkPatch}</style>
       <div className="pg-root"><div className="pg-empty">Utente non trovato</div></div>
     </>
   );
@@ -108,7 +109,7 @@ function UserDataPage() {
 
   return (
     <>
-      <style>{sharedStyles}</style>
+      <style>{sharedStyles}{darkPatch}</style>
       <div className="pg-root">
         <div className="pg-content">
 
@@ -135,7 +136,7 @@ function UserDataPage() {
                 </div>
                 <div style={{ padding: "24px", textAlign: "center" }}>
                   <div className="pg-avatar">{initials}</div>
-                  <h3 style={{ fontWeight: 800, fontSize: "1.15rem", marginBottom: 4 }}>
+                  <h3 style={{ fontWeight: 800, fontSize: "1.15rem", marginBottom: 4, color: "var(--text)" }}>
                     {user.name} {user.surname}
                   </h3>
                   <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 14 }}>
@@ -211,12 +212,12 @@ function UserDataPage() {
                               justifyContent: "space-between",
                               padding: "14px 24px",
                               cursor: "pointer",
-                              background: "linear-gradient(to right, #fafbff, #fffdf5)",
+                              background: "rgba(255,255,255,0.02)",
                               transition: "background 0.15s",
                               gap: 12
                             }}
-                            onMouseOver={e => e.currentTarget.style.background = "var(--ocean-light)"}
-                            onMouseOut={e => e.currentTarget.style.background = "linear-gradient(to right, #fafbff, #fffdf5)"}
+                            onMouseOver={e => e.currentTarget.style.background = "rgba(96,165,250,0.07)"}
+                            onMouseOut={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
                           >
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                               {pos ? (
@@ -229,7 +230,7 @@ function UserDataPage() {
                               ) : (
                                 <span style={{
                                   width: 36, height: 28, borderRadius: 20,
-                                  background: "var(--border)", display: "inline-block", flexShrink: 0
+                                  background: "rgba(255,255,255,0.06)", display: "inline-block", flexShrink: 0
                                 }} />
                               )}
                               <div>
@@ -268,8 +269,8 @@ function UserDataPage() {
                                   <div key={idx} style={{
                                     display: "flex", alignItems: "center", gap: 6,
                                     padding: "5px 12px",
-                                    background: isMe ? "var(--sun-light)" : "var(--bg)",
-                                    border: `1px solid ${isMe ? "var(--sun-mid)" : "var(--border)"}`,
+                                    background: isMe ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.03)",
+                                    border: `1px solid ${isMe ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.07)"}`,
                                     borderRadius: 20,
                                     fontSize: "0.74rem",
                                     fontWeight: isMe ? 700 : 500,
@@ -277,9 +278,7 @@ function UserDataPage() {
                                   }}>
                                     <span>{medals[idx]}</span>
                                     <span>{u.name} {u.surname}</span>
-                                    <span style={{
-                                      color: "var(--text-muted)", fontSize: "0.68rem"
-                                    }}>
+                                    <span style={{ color: "var(--text-muted)", fontSize: "0.68rem" }}>
                                       {u.totalPoints} pts
                                     </span>
                                   </div>
@@ -289,7 +288,8 @@ function UserDataPage() {
                                 <div style={{
                                   display: "flex", alignItems: "center",
                                   padding: "5px 12px",
-                                  background: "var(--bg)", border: "1px solid var(--border)",
+                                  background: "rgba(255,255,255,0.03)",
+                                  border: "1px solid rgba(255,255,255,0.07)",
                                   borderRadius: 20, fontSize: "0.72rem", color: "var(--text-muted)"
                                 }}>
                                   +{ranking.length - 3} altri

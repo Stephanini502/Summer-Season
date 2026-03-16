@@ -1,19 +1,18 @@
 import { navStyles } from "../style/SharedStyles";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-
-function Navbar() {
+function Navbar({ onLogout }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("userRoles");
     localStorage.removeItem("userId");
-    window.location.reload();
+    onLogout();
+    navigate("/login");
   };
 
   const isLoggedIn = !!localStorage.getItem("jwtToken");
-
   const userId = localStorage.getItem("userId");
 
   return (

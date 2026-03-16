@@ -91,6 +91,7 @@ public async Task<User> UpdateUser(int id, UserRequestDto updatedUser)
 
         user.DeletedAt = DateTime.Now;
         user.Name = user.Name + "_DELETED";
+        user.UserName = user.UserName + "_DELETED";
 
         if (user.Leagues != null && user.Leagues.Count > 0)
         {

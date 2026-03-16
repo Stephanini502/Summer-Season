@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sharedStyles } from "../style/SharedStyles";
+import { darkPatch } from "../style/DarkPatch";
 
 function ChallengesAdminPage() {
   const [challenges, setChallenges] = useState([]);
@@ -11,31 +12,30 @@ function ChallengesAdminPage() {
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
   const fetchChallenges = async () => {
-      try {
-        if (!token) return;
-        const response = await fetch("http://localhost:5247/api/challenges", { headers });
-        if (!response.ok) { setChallenges([]); return; }
-        const data = await response.json();
-        let challenges = Array.isArray(data) ? data : data.$values ?? [];
-        
-        challenges = challenges.map(c => ({
-          ...c,
-          leagueIds: c.leagueIds?.$values ?? c.leagueIds ?? []
-        }));
-        
-        setChallenges(challenges);
-      } catch (err) { setChallenges([]); }
+    try {
+      if (!token) return;
+      const response = await fetch("http://localhost:5247/api/challenges", { headers });
+      if (!response.ok) { setChallenges([]); return; }
+      const data = await response.json();
+      let challenges = Array.isArray(data) ? data : data.$values ?? [];
+      challenges = challenges.map(c => ({
+        ...c,
+        leagueIds: c.leagueIds?.$values ?? c.leagueIds ?? []
+      }));
+      setChallenges(challenges);
+    } catch (err) { setChallenges([]); }
   };
+
   const fetchLeagues = async () => {
-      try {
-        if (!token) return;
-        const response = await fetch("http://localhost:5247/api/leagues", { headers });
-        if (!response.ok) { setLeagues([]); return; }
-        const data = await response.json();
-        let leaguesData = Array.isArray(data) ? data : data.$values ?? [];
-        leaguesData = leaguesData.map(l => ({ ...l, id: Number(l.id ?? l.Id) }));
-        setLeagues(leaguesData);
-      } catch (err) { setLeagues([]); }
+    try {
+      if (!token) return;
+      const response = await fetch("http://localhost:5247/api/leagues", { headers });
+      if (!response.ok) { setLeagues([]); return; }
+      const data = await response.json();
+      let leaguesData = Array.isArray(data) ? data : data.$values ?? [];
+      leaguesData = leaguesData.map(l => ({ ...l, id: Number(l.id ?? l.Id) }));
+      setLeagues(leaguesData);
+    } catch (err) { setLeagues([]); }
   };
 
   useEffect(() => { fetchChallenges(); fetchLeagues(); }, []);
@@ -106,7 +106,7 @@ function ChallengesAdminPage() {
 
   return (
     <>
-      <style>{sharedStyles}</style>
+      <style>{sharedStyles}{darkPatch}</style>
       <div className="pg-root">
         <div className="pg-content">
 
@@ -168,11 +168,7 @@ function ChallengesAdminPage() {
                     <label className="pg-field-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       Leghe
                       {newChallenge.leagueIds.length > 0 && (
-                        <span style={{
-                          fontSize: "0.63rem", fontWeight: 700,
-                          background: "var(--sun-light)", border: "1px solid var(--sun-mid)",
-                          color: "var(--sun-dark)", padding: "2px 8px", borderRadius: 20
-                        }}>
+                        <span className="pg-badge pg-badge-sun" style={{ fontSize: "0.63rem" }}>
                           {newChallenge.leagueIds.length} selezionate
                         </span>
                       )}
@@ -193,8 +189,8 @@ function ChallengesAdminPage() {
                             <label key={l.id} onClick={() => toggleLeague(l.id)} style={{
                               display: "flex", alignItems: "center", gap: 8,
                               padding: "8px 11px",
-                              background: selected ? "var(--sun-light)" : "#f9faff",
-                              border: `1px solid ${selected ? "var(--sun)" : "var(--border)"}`,
+                              background: selected ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.03)",
+                              border: `1px solid ${selected ? "rgba(251,191,36,0.35)" : "rgba(255,255,255,0.08)"}`,
                               borderRadius: "var(--radius-sm)",
                               cursor: "pointer", transition: "all 0.15s", userSelect: "none"
                             }}>
@@ -251,7 +247,7 @@ function ChallengesAdminPage() {
                     {Array.isArray(challenges) && challenges.map(c => (
                       <tr key={c.id}>
                         <td>
-                          <div style={{ fontWeight: 600 }}>{c.name}</div>
+                          <div style={{ fontWeight: 600, color: "var(--text)" }}>{c.name}</div>
                           <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: 2 }}>
                             {c.description}
                           </div>
