@@ -170,12 +170,16 @@ function AdminPage() {
                     </div>
                     <div className="adm-field" style={{ marginTop: "4px" }}>
                       <label className="adm-field-label">Ruolo</label>
-                      <select className="adm-select" style={{ marginTop: "5px" }} value={userForm.role}
-                        onChange={e => setUserForm({ ...userForm, role: e.target.value })}>
-                        {Object.keys(roleMap)
-                        .filter(r => r !== "3")  
-                        .map(r => <option key={r} value={r}>{roleMap[r]}</option>)}
-                      </select>
+                    <select
+                      className="dark-select"
+                      style={{ marginTop: "5px" }}
+                      value={userForm.role}
+                      onChange={e => setUserForm({ ...userForm, role: e.target.value })}
+                    >
+                      {Object.keys(roleMap)
+                        .filter(r => r !== "3")
+                        .map(r => <option key={r} value={r} style={{ background: "#1a2035", color: "#e2e8f0" }}>{roleMap[r]}</option>)}
+                    </select>
                     </div>
                     <button type="submit" className="adm-btn-submit">Crea utente</button>
                   </form>

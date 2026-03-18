@@ -10,10 +10,12 @@ namespace SummerSeason.Controllers
 public class MediaController : ControllerBase
 {
     private readonly MediaService _mediaService;
+    private readonly UserService _userService;
 
-    public MediaController(MediaService mediaService)
+    public MediaController(MediaService mediaService, UserService userService)
     {
         _mediaService = mediaService;
+        _userService = userService;
     }
 
     [HttpPost("league/{leagueId}")]
@@ -50,6 +52,19 @@ public class MediaController : ControllerBase
     {
         var media = await _mediaService.GetByLeagueAsync(leagueId);
         return Ok(media.Select(m => new { m.Id, m.Url, m.Type }));
+    }
+    
+    [HttpPost("user/{userId}/avatar")]
+    [RequestSizeLimit(10485760)] // 10MB
+    [RequestFormLimits(MultipartBodyLengthLimit = 10485760)]
+    public async Task<IActionResult> UploadAvatar(int userId, IFormFile file)
+    {
+        if (file == null || file.Length == 0) return BadRequest("File mancante");
+        var folder = "summerseason/avatars";
+        var media = await _mediaService.UploadAndSaveAsync(file, "image", null, null, folder);
+        // salva l'url sull'utente — aggiungi AvatarUrl al modello User e un endpoint PUT
+        await _userService.SetAvatarAsync(userId, media.Url);
+        return Ok(new { media.Url });
     }
 }
 }

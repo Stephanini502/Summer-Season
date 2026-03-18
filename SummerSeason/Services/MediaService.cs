@@ -78,4 +78,5 @@ public class MediaService
             .Where(m => m.LeagueId == leagueId && m.DeletedAt == default(DateTime))
             .ToListAsync();
     }
+
 }

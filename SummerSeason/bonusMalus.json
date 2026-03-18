@@ -1,0 +1,28 @@
+{
+  "bonusMalus": [
+    {
+      "name": "Primo a completare",
+      "description": "Sei il primo a completare questa sfida",
+      "points": 5,
+      "type": "Bonus"
+    },
+    {
+      "name": "Serata a secco",
+      "description": "Non fai nessun bonus",
+      "points": -5,
+      "type": "Malus"
+    },
+    {
+      "name": "Fuori porta",
+      "description": "Completi la sfida fuori regione",
+      "points": 25,
+      "type": "Bonus"
+    },
+    {
+      "name": "Marinaio",
+      "description": "Ti fai una con il ciclo",
+      "points": 15,
+      "type": "Bonus"  
+    }
+  ]
+}

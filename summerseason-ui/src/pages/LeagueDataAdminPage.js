@@ -1,123 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { sharedStyles } from "../style/SharedStyles";
-
-const mediaStyles = `
-  .media-thumb { width: 100%; border-radius: 8px; object-fit: cover; max-height: 160px; display: block; cursor: zoom-in; }
-  .media-video { width: 100%; border-radius: 8px; max-height: 200px; display: block; background: #0d1117; }
-  .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-  .media-item {
-    position: relative; border-radius: 10px; overflow: hidden;
-    background: #121826 !important;
-    border: 1px solid rgba(255,255,255,0.07) !important;
-  }
-  .media-item-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,0);
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: background 0.2s;
-  }
-  .media-item:hover .media-item-overlay { background: rgba(0,0,0,0.55); }
-  .media-icon-btn {
-    opacity: 0; transition: opacity 0.2s;
-    width: 36px; height: 36px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; border: none; font-size: 1rem;
-    backdrop-filter: blur(4px);
-  }
-  .media-item:hover .media-icon-btn { opacity: 1; }
-  .media-icon-btn-view { background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.35) !important; }
-  .media-icon-btn-dl  { background: #3b82f6; }
-  .media-icon-btn-del { background: #ef4444; }
-  .media-upload-btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
-    cursor: pointer;
-    border: 1px dashed rgba(255,255,255,0.12) !important;
-    background: rgba(255,255,255,0.03) !important;
-    color: #8b97b8 !important;
-    transition: all 0.15s;
-  }
-  .media-upload-btn:hover {
-    border-color: rgba(251,191,36,0.4) !important;
-    color: #fbbf24 !important;
-    background: rgba(251,191,36,0.08) !important;
-  }
-  .media-section {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    display: flex; flex-direction: column; gap: 16px;
-  }
-  .media-block-title {
-    font-size: 0.72rem; font-weight: 700;
-    color: #8b97b8; text-transform: uppercase;
-    letter-spacing: 0.08em; margin-bottom: 10px;
-  }
-  .media-progress {
-    font-size: 0.75rem; color: #fbbf24; font-weight: 600;
-    background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2);
-    padding: 6px 14px; border-radius: 20px;
-  }
-  /* ← QUESTO ERA IL COLPEVOLE */
-  .challenge-item { border-bottom: 1px solid rgba(255,255,255,0.07); }
-  .challenge-media-wrap {
-    padding: 8px 16px 16px;
-    background: rgba(255,255,255,0.015) !important;
-    border-top: 1px dashed rgba(255,255,255,0.06);
-  }
-  .video-wrap { position: relative; }
-  .video-actions { position: absolute; top: 8px; right: 8px; display: flex; gap: 6px; }
-  .video-icon-btn {
-    width: 32px; height: 32px; border-radius: 50%; border: none;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem; cursor: pointer;
-  }
-  /* Lightbox */
-  .lb-backdrop {
-    position: fixed; inset: 0; z-index: 1000;
-    background: rgba(0,0,0,0.94); display: flex;
-    align-items: center; justify-content: center;
-    animation: lbFadeIn 0.15s ease;
-  }
-  @keyframes lbFadeIn { from { opacity:0 } to { opacity:1 } }
-  .lb-img {
-    max-width: 90vw; max-height: 85vh; border-radius: 10px;
-    object-fit: contain; box-shadow: 0 25px 60px rgba(0,0,0,0.7);
-    animation: lbZoomIn 0.18s ease;
-  }
-  @keyframes lbZoomIn { from { transform:scale(0.93); opacity:0 } to { transform:scale(1); opacity:1 } }
-  .lb-close {
-    position: fixed; top: 20px; right: 24px;
-    background: rgba(255,255,255,0.12); border: none; color: white;
-    font-size: 1.4rem; width: 44px; height: 44px; border-radius: 50%;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s; backdrop-filter: blur(6px);
-  }
-  .lb-close:hover { background: rgba(255,255,255,0.22); }
-  .lb-download {
-    position: fixed; top: 20px; right: 76px;
-    background: #3b82f6; border: none; color: white;
-    font-size: 0.8rem; font-weight: 700; padding: 0 16px; height: 44px;
-    border-radius: 22px; cursor: pointer; display: flex; align-items: center; gap: 6px;
-    transition: background 0.15s;
-  }
-  .lb-download:hover { background: #2563eb; }
-  .lb-arrow {
-    position: fixed; top: 50%; transform: translateY(-50%);
-    background: rgba(255,255,255,0.12); border: none; color: white;
-    font-size: 1.6rem; width: 48px; height: 48px; border-radius: 50%;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s; backdrop-filter: blur(6px);
-  }
-  .lb-arrow:hover { background: rgba(255,255,255,0.22); }
-  .lb-arrow-left  { left: 20px; }
-  .lb-arrow-right { right: 20px; }
-  .lb-counter {
-    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-    color: rgba(255,255,255,0.5); font-size: 0.8rem; font-weight: 600;
-    background: rgba(0,0,0,0.5); padding: 4px 14px; border-radius: 20px;
-  }
-`;
+import { mediaStyles } from "../style/SharedStyles";
 
 function LeagueDataAdminPage() {
   const { id } = useParams();
@@ -186,18 +70,28 @@ function LeagueDataAdminPage() {
   const fetchLeagueData = async () => {
     setLoading(true); setError("");
     try {
-      const [leagueData, participantsData, rankingData, challengesData, mediaData] = await Promise.all([
+      const [leagueData, rankingData, challengesData, mediaData, usersData] = await Promise.all([
         fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(r => r.json()),
-        fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/media/league/${id}`, { headers }).then(r => r.json()),
+        fetch(`http://localhost:5247/api/users`, { headers }).then(r => r.json()),
       ]);
+
       const normalized = normalizeLeague(leagueData);
       normalized.media = normalizeValues(mediaData).map(normalizeMedia);
       setLeague(normalized);
-      setParticipants(normalizeValues(rankingData).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints));
+
+      const normalizedParticipants = normalizeValues(rankingData).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints);
+      setParticipants(normalizedParticipants);
+      await loadRolesForParticipants(normalizedParticipants);
+
       setChallenges(normalizeValues(challengesData).map(normalizeChallenge));
+
+      const allUsersData = normalizeValues(usersData).map(normalizeUser);
+      const participantIds = normalizedParticipants.map(p => p.id);
+      setAllUsers(allUsersData.filter(u => !participantIds.includes(u.id)));
+
     } catch (err) { setError("Errore caricamento dati lega"); }
     finally { setLoading(false); }
   };
@@ -227,34 +121,46 @@ function LeagueDataAdminPage() {
     } catch { window.open(url, "_blank"); }
   };
 
-  const refreshParticipantsAndRanking = () => {
-    fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers })
-      .then(r => r.json()).then(data => { const n = normalizeValues(data).map(normalizeUser); setParticipants(n); loadRolesForParticipants(n); }).catch(console.error);
-    fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers })
-      .then(r => r.json()).then(data => { setRanking(normalizeValues(data).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints)); }).catch(console.error);
+  const refreshAll = async () => {
+    const [rankingData, usersData] = await Promise.all([
+      fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
+      fetch(`http://localhost:5247/api/users`, { headers }).then(r => r.json()),
+    ]);
+    const normalizedParticipants = normalizeValues(rankingData).map(normalizeUser).sort((a, b) => b.totalPoints - a.totalPoints);
+    setParticipants(normalizedParticipants);
+    await loadRolesForParticipants(normalizedParticipants);
+    const allUsersData = normalizeValues(usersData).map(normalizeUser);
+    const participantIds = normalizedParticipants.map(p => p.id);
+    setAllUsers(allUsersData.filter(u => !participantIds.includes(u.id)));
   };
 
-  const handleAddParticipant = () => {
+  const handleAddParticipant = async () => {
     if (!selectedUserId) return;
-    fetch(`http://localhost:5247/api/leagues/${id}/participants/${selectedUserId}`, { method: "POST", headers })
-      .then(res => { if (!res.ok) throw new Error("Errore aggiunta"); setSelectedUserId(""); refreshParticipantsAndRanking(); })
-      .catch(err => alert(err.message));
-  };
-
-  const handleRemoveParticipant = async (uid) => {
-    if (!window.confirm("Rimuovere questo partecipante?")) return;
     try {
-      const res = await fetch(`http://localhost:5247/api/leagues/${id}/${uid}`, { method: "DELETE", headers });
-      if (!res.ok) throw new Error("Errore rimozione");
-      refreshParticipantsAndRanking();
+      const res = await fetch(`http://localhost:5247/api/leagues/${id}/participants/${selectedUserId}`, { method: "POST", headers });
+      if (!res.ok) throw new Error("Errore aggiunta");
+      setSelectedUserId("");
+      await refreshAll();
     } catch (err) { alert(err.message); }
   };
 
-  const handleSetReferee = () => {
+  const handleRemoveParticipant = async (uid, name) => {
+    if (!window.confirm(`Rimuovere ${name} dalla lega?`)) return;
+    try {
+      const res = await fetch(`http://localhost:5247/api/leagues/${id}/${uid}`, { method: "DELETE", headers });
+      if (!res.ok) throw new Error("Errore rimozione");
+      await refreshAll();
+    } catch (err) { alert(err.message); }
+  };
+
+  const handleSetReferee = async () => {
     if (!selectedRefereeId) return;
-    fetch(`http://localhost:5247/api/users/${selectedRefereeId}/${refereeRole}`, { method: "PUT", headers })
-      .then(res => { if (!res.ok) throw new Error("Errore assegnazione"); setSelectedRefereeId(""); refreshParticipantsAndRanking(); })
-      .catch(err => alert(err.message));
+    try {
+      const res = await fetch(`http://localhost:5247/api/users/${selectedRefereeId}/${refereeRole}`, { method: "PUT", headers });
+      if (!res.ok) throw new Error("Errore assegnazione");
+      setSelectedRefereeId("");
+      await refreshAll();
+    } catch (err) { alert(err.message); }
   };
 
   const triggerUpload = (type, entityId, mediaType) => {
@@ -311,7 +217,7 @@ function LeagueDataAdminPage() {
           <button className="lb-close" onClick={() => setLightbox(null)}>✕</button>
           <button className="lb-download" onClick={e => { e.stopPropagation(); handleDownload(lightbox.url); }}>⬇ Scarica</button>
           {lightbox.allImages.length > 1 && (<>
-            <button className="lb-arrow lb-arrow-left"  onClick={e => { e.stopPropagation(); setLightbox(prev => { const n=(prev.index-1+prev.allImages.length)%prev.allImages.length; return {...prev,url:prev.allImages[n].url,index:n}; }); }}>‹</button>
+            <button className="lb-arrow lb-arrow-left" onClick={e => { e.stopPropagation(); setLightbox(prev => { const n=(prev.index-1+prev.allImages.length)%prev.allImages.length; return {...prev,url:prev.allImages[n].url,index:n}; }); }}>‹</button>
             <button className="lb-arrow lb-arrow-right" onClick={e => { e.stopPropagation(); setLightbox(prev => { const n=(prev.index+1)%prev.allImages.length; return {...prev,url:prev.allImages[n].url,index:n}; }); }}>›</button>
             <div className="lb-counter">{lightbox.index + 1} / {lightbox.allImages.length}</div>
           </>)}
@@ -334,12 +240,11 @@ function LeagueDataAdminPage() {
 
           <div className="pg-stats">
             <div className="pg-stat-card"><div><p className="pg-stat-label">Partecipanti</p><p className="pg-stat-value">{participants.length}</p></div><div className="pg-stat-icon">👥</div></div>
-            <div className="pg-stat-card"><div><p className="pg-stat-label">Arbitri</p><p className="pg-stat-value">{referees.length}</p></div><div className="pg-stat-icon pg-stat-icon-yellow">🟡</div></div>
+            <div className="pg-stat-card"><div><p className="pg-stat-label">Arbitri</p><p className="pg-stat-value">{referees.length}</p></div><div className="pg-stat-icon pg-stat-icon-yellow">⚖️</div></div>
             <div className="pg-stat-card"><div><p className="pg-stat-label">Sfide</p><p className="pg-stat-value">{challenges.length}</p></div><div className="pg-stat-icon">🏁</div></div>
             <div className="pg-stat-card"><div><p className="pg-stat-label">Media caricati</p><p className="pg-stat-value">{(league.media || []).length}</p></div><div className="pg-stat-icon">🖼️</div></div>
           </div>
 
-          {/* ── MEDIA LEGA ── */}
           <div className="pg-card" style={{ marginBottom: 0 }}>
             <div className="pg-card-header">
               <div className="pg-card-header-left"><div className="pg-card-icon">🖼️</div><h2 className="pg-card-title">Media della lega</h2></div>
@@ -387,7 +292,6 @@ function LeagueDataAdminPage() {
             </div>
           </div>
 
-          {/* ── MEDIA SFIDE ── */}
           {challenges.length > 0 && (
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
@@ -449,7 +353,6 @@ function LeagueDataAdminPage() {
             </div>
           )}
 
-          {/* ── GESTIONE ── */}
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
             <div className="pg-col" style={{ gap: 20 }}>
 
@@ -462,11 +365,14 @@ function LeagueDataAdminPage() {
               </div>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
-                <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">🟡</div><h2 className="pg-card-title">Arbitri assegnati</h2></div></div>
-                <div style={{ padding: "16px 24px" }}>
+                <div className="pg-card-header">
+                  <div className="pg-card-header-left"><div className="pg-card-icon">⚖️</div><h2 className="pg-card-title">Arbitri assegnati</h2></div>
+                  <span className="pg-badge pg-badge-yellow">{referees.length}</span>
+                </div>
+                <div style={{ padding: "12px 24px" }}>
                   {referees.length > 0 ? referees.map(r => (
-                    <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-                      <div className="pg-avatar" style={{ width: 36, height: 36, fontSize: "0.9rem", margin: 0 }}>{r.name[0]}</div>
+                    <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div className="participant-avatar">{r.name[0]}</div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text)" }}>{r.name} {r.surname}</div>
                         <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{r.userName}</div>
@@ -477,51 +383,89 @@ function LeagueDataAdminPage() {
               </div>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
-                <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">⚖️</div><h2 className="pg-card-title">Assegna arbitro</h2></div></div>
-                <div style={{ padding: "16px 24px" }}>
-                  <div className="pg-field">
-                    <label className="pg-field-label">Seleziona partecipante</label>
-                    <select className="pg-select" value={selectedRefereeId} onChange={e => setSelectedRefereeId(e.target.value)}>
-                      <option value="">Scegli...</option>
-                      {(participants || []).map(u => (<option key={u.id} value={u.id}>{u.name} {u.surname} ({u.userName})</option>))}
-                    </select>
-                  </div>
-                  <button className="pg-btn pg-btn-warning" style={{ width: "100%" }} onClick={handleSetReferee}>⚖️ Assegna come arbitro</button>
+                <div className="pg-card-header">
+                  <div className="pg-card-header-left"><div className="pg-card-icon">🎖️</div><h2 className="pg-card-title">Assegna arbitro</h2></div>
+                </div>
+                <div style={{ padding: "16px 24px", display: "flex", flexDirection: "column", gap: 12 }}>
+                  <select className="dark-select" value={selectedRefereeId} onChange={e => setSelectedRefereeId(e.target.value)}>
+                    <option value="">Scegli un partecipante...</option>
+                    {participants.map(u => (
+                      <option key={u.id} value={u.id}>{u.name} {u.surname} — {u.userName}</option>
+                    ))}
+                  </select>
+                  <button
+                    className="pg-btn pg-btn-warning"
+                    style={{ width: "100%", opacity: selectedRefereeId ? 1 : 0.5 }}
+                    onClick={handleSetReferee}
+                    disabled={!selectedRefereeId}
+                  >
+                    ⚖️ Assegna come arbitro
+                  </button>
                 </div>
               </div>
+
             </div>
 
             <div className="pg-col" style={{ gap: 20 }}>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
-                <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">➕</div><h2 className="pg-card-title">Aggiungi partecipante</h2></div></div>
+                <div className="pg-card-header">
+                  <div className="pg-card-header-left"><div className="pg-card-icon">➕</div><h2 className="pg-card-title">Aggiungi partecipante</h2></div>
+                  <span className="pg-badge pg-badge-blue">{allUsers.length} disponibili</span>
+                </div>
                 <div style={{ padding: "16px 24px" }}>
-                  <div className="pg-inline-form">
-                    <select className="pg-select" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}>
-                      <option value="">Seleziona utente...</option>
-                      {(allUsers || []).map(u => (<option key={u.id} value={u.id}>{u.name} {u.surname} ({u.userName})</option>))}
-                    </select>
-                    <button className="pg-btn pg-btn-primary" onClick={handleAddParticipant}>Aggiungi</button>
-                  </div>
+                  {allUsers.length === 0 ? (
+                    <div className="pg-empty" style={{ padding: "12px 0" }}>Tutti gli utenti sono già nella lega</div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <select className="dark-select" value={selectedUserId} onChange={e => setSelectedUserId(e.target.value)}>
+                        <option value="">Seleziona utente...</option>
+                        {allUsers.map(u => (
+                          <option key={u.id} value={u.id}>{u.name} {u.surname} — {u.userName}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="pg-btn pg-btn-primary"
+                        style={{ whiteSpace: "nowrap", opacity: selectedUserId ? 1 : 0.5 }}
+                        onClick={handleAddParticipant}
+                        disabled={!selectedUserId}
+                      >
+                        + Aggiungi
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
-                <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Classifica partecipanti</h2></div></div>
-                <ul className="pg-list">
+                <div className="pg-card-header">
+                  <div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Partecipanti</h2></div>
+                  <span className="pg-badge pg-badge-blue">{participants.length}</span>
+                </div>
+                <div style={{ padding: "8px 24px 16px" }}>
                   {participants.length > 0 ? participants.map((u, idx) => (
-                    <li key={u.id} className="pg-list-item clickable" onClick={() => navigate(`/user/${u.id}`)}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div key={u.id} className="participant-row">
+                      <div className="participant-info" onClick={() => navigate(`/user/${u.id}`)}>
                         <span className={rankClass(idx)}>{idx + 1}</span>
+                        <div className="participant-avatar">{u.name[0]}</div>
                         <div>
-                          <div className="pg-list-item-name">{u.name} {u.surname}</div>
-                          <div className="pg-list-item-sub">{u.userName}</div>
+                          <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "var(--text)" }}>{u.name} {u.surname}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>{u.userName}</div>
                         </div>
                       </div>
-                      <span className="pg-badge pg-badge-blue">{u.totalPoints} pts</span>
-                    </li>
-                  )) : (<li><div className="pg-empty">Nessun partecipante</div></li>)}
-                </ul>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span className="pg-badge pg-badge-blue">{u.totalPoints} pts</span>
+                        <button
+                          className="remove-btn"
+                          title="Rimuovi dalla lega"
+                          onClick={() => handleRemoveParticipant(u.id, `${u.name} ${u.surname}`)}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  )) : <div className="pg-empty" style={{ padding: "16px 0" }}>Nessun partecipante</div>}
+                </div>
               </div>
 
             </div>

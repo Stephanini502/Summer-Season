@@ -6,6 +6,7 @@ using System.Text;
 using SummerSeason.Services;
 using CloudinaryDotNet;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 var key = "KEY_TEST_0000_ASDFGHJKLASDFGHJKL";
@@ -73,7 +74,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var service = new BonusMalusService(context);
+    try
+    {
+        await service.ParseJson();
+        Console.WriteLine("✅ BonusMalus seeded correttamente");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Errore seeding BonusMalus: {ex.Message}");
+    }
+}
 app.UseHttpsRedirection();
 app.UseCors("AllowedFrontend");
 app.UseAuthentication();

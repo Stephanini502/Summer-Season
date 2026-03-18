@@ -134,4 +134,11 @@ public async Task<List<String>> GetRoleByUserId(int userId)
                .Select(r => r.ToString())
                .ToList();    
     }
+        public async Task SetAvatarAsync(int userId, string url)
+    {
+        var user = await _context.Users.FindAsync(userId);
+        if (user == null) return;
+        user.AvatarUrl = url;
+        await _context.SaveChangesAsync();
+    }
 }

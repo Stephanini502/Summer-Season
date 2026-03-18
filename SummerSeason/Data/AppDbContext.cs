@@ -15,6 +15,8 @@ namespace SummerSeason.data
         public DbSet<Challenge> Challenges { get; set; }
         public DbSet<Result> Results { get; set; }
         public DbSet<Media> Media { get; set; }
+        public DbSet<BonusMalus> BonusMalus { get; set; }
+
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)

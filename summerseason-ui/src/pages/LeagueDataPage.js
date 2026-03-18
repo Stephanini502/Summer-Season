@@ -207,7 +207,6 @@ function LeagueDataPage() {
             )}
           </div>
 
-          {/* MEDIA LEGA */}
           <div className="pg-card" style={{marginBottom:0}}>
             <div className="pg-card-header">
               <div className="pg-card-header-left"><div className="pg-card-icon">🖼️</div><h2 className="pg-card-title">Media della lega</h2></div>
@@ -252,7 +251,6 @@ function LeagueDataPage() {
           </div>
 
           <div className="pg-grid-2">
-            {/* Classifica */}
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Classifica partecipanti</h2></div></div>
               <ul className="pg-list">
@@ -268,7 +266,6 @@ function LeagueDataPage() {
               </ul>
             </div>
 
-            {/* Sfide + media */}
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left"><div className="pg-card-icon">🏁</div><h2 className="pg-card-title">Sfide di questa lega</h2></div>
