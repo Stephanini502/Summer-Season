@@ -15,7 +15,7 @@ using System.Text.Encodings.Web;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _context;
-    private readonly string key = "KEY_TEST_0000_ASDFGHJKLASDFGHJKL";
+    private readonly string key = "SuMmEr_SeAsOn_0000_SECRET_KEY_0000";
 
     public AuthController(AppDbContext context)
     {

@@ -13,8 +13,9 @@ import ScrollToTop from "./components/ScrollToTop";
 import ChallengesPage from "./pages/ChallengesPage";
 import ChallengesAdminPage from "./pages/ChallengesAdminPage";
 import LeagueDataAdminPage from "./pages/LeagueDataAdminPage";
+import PointRequestPage from "./pages/PointRequestPage";
 
-/* ── Reset globale: neutralizza Bootstrap e imposta il dark base ── */
+
 const globalReset = `
   *, *::before, *::after {
     border-color: rgba(255,255,255,0.08);
@@ -111,6 +112,7 @@ function App() {
           <Route path="/user/:id" element={isLoggedIn ? <UserDataPage /> : <MainPage />} />
           <Route path="/league/:id" element={isLoggedIn && isAdmin ? <LeagueDataAdminPage /> : <LeagueDataPage />} />
           <Route path="*"         element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
+          <Route path="/admin/requests" element={isLoggedIn && isAdmin ? <PointRequestPage /> : <Navigate to="/login" replace />} />
         </Routes>
       </div>
 

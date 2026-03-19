@@ -4,13 +4,15 @@ import { signupStyles } from "../style/SharedStyles";
 
 function SignUpPage({ onLoginSuccess }) {
   const [registerForm, setRegisterForm] = useState({ name: "", surname: "", username: "", password: "" });
-  const [error, setError] = useState("");
+  const [error, setError]     = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -25,9 +27,12 @@ function SignUpPage({ onLoginSuccess }) {
         throw new Error(text || "Registrazione fallita");
       }
 
-      alert("Registrazione avvenuta con successo! Ora puoi fare il login.");
+      setSuccess("Registrazione avvenuta con successo! Verrai reindirizzato al login...");
       setRegisterForm({ name: "", surname: "", username: "", password: "" });
-      navigate("/");
+
+      // Aspetta 2 secondi poi naviga, così l'utente legge il messaggio
+      setTimeout(() => navigate("/"), 2000);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,7 +42,7 @@ function SignUpPage({ onLoginSuccess }) {
 
   return (
     <>
-      <style>{signupStyles}</style>
+      <style>{signupStyles}{extraStyles}</style>
       <div className="signup-root">
         <div className="signup-card">
           <div className="signup-logo">
@@ -57,6 +62,12 @@ function SignUpPage({ onLoginSuccess }) {
           {error && (
             <div className="signup-alert">
               <span>⚠️</span> {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="signup-success">
+              <span>✓</span> {success}
             </div>
           )}
 
@@ -109,8 +120,8 @@ function SignUpPage({ onLoginSuccess }) {
               />
             </div>
 
-            <button type="submit" className="signup-btn" disabled={loading}>
-              {loading ? "Registrazione in corso..." : "🚀 Registrati"}
+            <button type="submit" className="signup-btn" disabled={loading || !!success}>
+              {loading ? "Registrazione in corso..." : success ? "✓ Fatto!" : "🚀 Registrati"}
             </button>
           </form>
 
@@ -123,5 +134,22 @@ function SignUpPage({ onLoginSuccess }) {
     </>
   );
 }
+
+const extraStyles = `
+  .signup-success {
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.3);
+    color: #34d399;
+    border-radius: 10px;
+    padding: 11px 16px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: signupFadeUp 0.3s ease both;
+  }
+`;
 
 export default SignUpPage;

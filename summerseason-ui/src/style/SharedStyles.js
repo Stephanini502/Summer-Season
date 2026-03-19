@@ -1668,3 +1668,203 @@ export const challengesPageStyles = `
     background: rgba(255,255,255,0.06);
   }
 `;
+
+export const pointRequestStyles = `
+  .pr-page-card {
+    background: #1a2236;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    margin-bottom: 16px;
+    animation: pgFadeUp 0.4s ease both;
+  }
+
+  .pr-page-item {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .pr-page-item:last-child { border-bottom: none; }
+
+  .pr-page-item-top {
+    display: flex; align-items: center; gap: 14px;
+  }
+
+  .pr-avatar {
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(251,191,36,0.15));
+    border: 1px solid rgba(251,191,36,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem; font-weight: 800; color: #60a5fa;
+  }
+
+  .pr-user-info { flex: 1; }
+  .pr-user-name {
+    font-weight: 700; font-size: 0.92rem; color: #eef2ff;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .pr-user-handle { font-weight: 500; color: #8b97b8; font-size: 0.78rem; }
+  .pr-challenge-label {
+    font-size: 0.78rem; color: #8b97b8; margin-top: 3px;
+  }
+  .pr-challenge-name { color: #eef2ff; font-weight: 600; }
+
+  .pr-points-col { text-align: right; flex-shrink: 0; }
+  .pr-points-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem; font-weight: 800; color: #34d399;
+    text-shadow: 0 0 16px rgba(52,211,153,0.3);
+    line-height: 1;
+  }
+  .pr-date {
+    font-size: 0.65rem; color: #4b5675; margin-top: 4px;
+  }
+
+  /* Meta info sfida */
+  .pr-meta {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .pr-meta-tag {
+    font-size: 0.68rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px;
+    background: rgba(96,165,250,0.08);
+    border: 1px solid rgba(96,165,250,0.15);
+    color: #60a5fa;
+  }
+
+  /* Nota admin */
+  .pr-note-wrap { display: flex; flex-direction: column; gap: 5px; }
+  .pr-note-label {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #4b5675;
+  }
+  .pr-note-input {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #eef2ff;
+    padding: 9px 14px;
+    border-radius: 8px;
+    width: 100%; outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .pr-note-input::placeholder { color: #4b5675; }
+  .pr-note-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.1);
+  }
+
+  /* Bottoni azione */
+  .pr-actions { display: flex; gap: 10px; }
+
+  .pr-btn-approve {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 700;
+    flex: 1; padding: 11px 16px; border-radius: 9px; border: none;
+    cursor: pointer; transition: all 0.15s;
+    background: rgba(52,211,153,0.12);
+    color: #34d399;
+    border: 1px solid rgba(52,211,153,0.25);
+  }
+  .pr-btn-approve:hover:not(:disabled) {
+    background: rgba(52,211,153,0.2);
+    box-shadow: 0 0 14px rgba(52,211,153,0.15);
+  }
+  .pr-btn-approve:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .pr-btn-reject {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.82rem; font-weight: 700;
+    flex: 1; padding: 11px 16px; border-radius: 9px;
+    cursor: pointer; transition: all 0.15s;
+    background: rgba(248,113,113,0.08);
+    color: #f87171;
+    border: 1px solid rgba(248,113,113,0.2);
+  }
+  .pr-btn-reject:hover:not(:disabled) {
+    background: rgba(248,113,113,0.16);
+    box-shadow: 0 0 14px rgba(248,113,113,0.12);
+  }
+  .pr-btn-reject:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* Empty state */
+  .pr-page-empty {
+    text-align: center; padding: 60px 24px;
+    background: #1a2236;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+  }
+
+  /* Toast */
+  .pr-toast {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 0.82rem; font-weight: 600;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    z-index: 300; animation: toastIn 0.25s ease both;
+    white-space: nowrap;
+  }
+  .pr-toast-approve {
+    background: #1a2236; border: 1px solid rgba(52,211,153,0.3); color: #34d399;
+  }
+  .pr-toast-reject {
+    background: #1a2236; border: 1px solid rgba(248,113,113,0.3); color: #f87171;
+  }
+  @keyframes toastIn {
+    from { opacity:0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity:1; transform: translateX(-50%) translateY(0); }
+  }
+`;
+
+export const pointRequestAdminStyles = `
+  .pr-item {
+    padding: 16px 24px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .pr-item:last-child { border-bottom: none; }
+  .pr-item-top { display: flex; align-items: center; gap: 12px; }
+  .pr-user-avatar {
+    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(251,191,36,0.15));
+    border: 1px solid rgba(251,191,36,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.78rem; font-weight: 800; color: #60a5fa;
+  }
+  .pr-points {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.1rem; font-weight: 800; color: #34d399;
+    text-shadow: 0 0 16px rgba(52,211,153,0.35);
+  }
+  .pr-note-input {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.78rem;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #eef2ff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    width: 100%; outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .pr-note-input::placeholder { color: #4b5675; }
+  .pr-note-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
+  }
+  .pr-actions { display: flex; gap: 8px; }
+  .pr-empty {
+    text-align: center; color: #4b5675; font-size: 0.8rem; padding: 28px 0;
+  }
+  .pr-badge {
+    background: #ef4444; color: #fff;
+    font-size: 0.68rem; font-weight: 800;
+    padding: 3px 9px; border-radius: 20px;
+    min-width: 22px; text-align: center;
+    line-height: 1.4;
+  }
+`;

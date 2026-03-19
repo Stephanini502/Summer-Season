@@ -59,7 +59,7 @@ function LoginPage({ onLoginSuccess }) {
 
           {error && (
             <div className="login-alert">
-              <span>⚠️</span> {error}
+              <span>⚠️ Credenziali non valide</span>
             </div>
           )}
 

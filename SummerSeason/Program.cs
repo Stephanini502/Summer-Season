@@ -8,8 +8,9 @@ using CloudinaryDotNet;
 
 
 var builder = WebApplication.CreateBuilder(args);
+System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-var key = "SuMmEr_SeAsOn_0000";
+var key = "SuMmEr_SeAsOn_0000_SECRET_KEY_0000";
 
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary");
 var account = new Account(
@@ -90,7 +91,11 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"❌ Errore seeding BonusMalus: {ex.Message}");
     }
 }
-app.UseHttpsRedirection();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection(); 
+}
 app.UseCors("AllowedFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

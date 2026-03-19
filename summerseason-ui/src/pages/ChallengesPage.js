@@ -175,7 +175,6 @@ function ChallengesPage() {
     finally { setSubmitting(false); }
   };
 
-  /* ── Derived ── */
   const totalPoints = challenges.reduce((s, c) => s + (c.points || 0), 0);
   const bonus       = bonusMalus.filter(b => b.type === "Bonus");
   const malus       = bonusMalus.filter(b => b.type === "Malus");

@@ -1,60 +1,42 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminStyles } from "../style/SharedStyles";
+import { pointRequestAdminStyles } from "../style/SharedStyles";
 
 const roleMap = {
   0: "Admin", 1: "Referee", 2: "League Admin", 3: "Participant", 4: "Guest"
 };
 
-const pointRequestStyles = `
-  .pr-item {
-    padding: 16px 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-    display: flex; flex-direction: column; gap: 12px;
-  }
-  .pr-item:last-child { border-bottom: none; }
-  .pr-item-top { display: flex; align-items: center; gap: 12px; }
-  .pr-user-avatar {
-    width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-    background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(251,191,36,0.15));
-    border: 1px solid rgba(251,191,36,0.2);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Outfit', sans-serif;
-    font-size: 0.78rem; font-weight: 800; color: #60a5fa;
-  }
-  .pr-points {
-    font-family: 'Outfit', sans-serif;
-    font-size: 1.1rem; font-weight: 800; color: #34d399;
-    text-shadow: 0 0 16px rgba(52,211,153,0.35);
-  }
-  .pr-note-input {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-size: 0.78rem;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: #eef2ff;
-    padding: 8px 12px;
-    border-radius: 8px;
-    width: 100%; outline: none;
-    transition: border-color 0.18s, box-shadow 0.18s;
-  }
-  .pr-note-input::placeholder { color: #4b5675; }
-  .pr-note-input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(96,165,250,0.12);
-  }
-  .pr-actions { display: flex; gap: 8px; }
-  .pr-empty {
-    text-align: center; color: #4b5675; font-size: 0.8rem; padding: 28px 0;
-  }
-  .pr-badge {
-    background: #ef4444; color: #fff;
-    font-size: 0.68rem; font-weight: 800;
-    padding: 3px 9px; border-radius: 20px;
-    min-width: 22px; text-align: center;
-    line-height: 1.4;
-  }
-`;
+  function PendingBadge({ token }) {
+  const [count, setCount] = useState(0);
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const res = await fetch("http://localhost:5247/api/pointrequests/pending", { headers });
+        if (!res.ok) return;
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : data.$values ?? [];
+        setCount(list.length);
+      } catch { }
+    };
+    fetch_();
+    const interval = setInterval(fetch_, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  if (count === 0) return null;
+  return (
+    <span style={{
+      background: "#ef4444", color: "#fff",
+      fontSize: "0.68rem", fontWeight: 800,
+      padding: "3px 10px", borderRadius: 20,
+    }}>
+      {count} in attesa
+    </span>
+  );
+}
 
 function PointRequestsPanel({ token }) {
   const [requests, setRequests] = useState([]);
@@ -77,6 +59,7 @@ function PointRequestsPanel({ token }) {
 
   useEffect(() => { fetchPending(); }, []);
 
+
   const approve = async (id) => {
     setActing(id);
     try {
@@ -95,7 +78,7 @@ function PointRequestsPanel({ token }) {
     try {
       const res = await fetch(`http://localhost:5247/api/pointrequests/${id}/reject`, {
         method: "PUT", headers,
-        body: JSON.stringify({ note: note[id] || null })
+        body: JSON.stringify({ adminNote: note[id] || "" })
       });
       if (!res.ok) throw new Error();
       setRequests(prev => prev.filter(r => r.id !== id));
@@ -192,9 +175,10 @@ function PointRequestsPanel({ token }) {
 }
 
 function AdminPage() {
-  const [users, setUsers]     = useState([]);
+  const [users, setUsers] = useState([]);
+  const [participants, setParticipants] = useState([]);
   const [leagues, setLeagues] = useState([]);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const token = localStorage.getItem("jwtToken");
@@ -216,14 +200,17 @@ function AdminPage() {
   });
 
   const loadUsers = async () => {
-    try {
-      const res = await fetch("http://localhost:5247/api/users", { headers });
-      if (!res.ok) throw new Error(`Errore caricamento utenti (${res.status})`);
-      let data = await res.json();
-      if (data.$values) data = data.$values;
-      setUsers(Array.isArray(data) ? data.map(normalizeUser) : []);
-    } catch (err) { setError(err.message); }
+  try {
+    const res = await fetch("http://localhost:5247/api/users", { headers });
+    if (!res.ok) throw new Error(`Errore caricamento utenti (${res.status})`);
+    let data = await res.json();
+    if (data.$values) data = data.$values;
+    const all = Array.isArray(data) ? data.map(normalizeUser) : [];
+    setUsers(all);
+    setParticipants(all.filter(u => !u.roles.includes(0))); 
+  } catch (err) { setError(err.message); }
   };
+
 
   const loadLeagues = async () => {
     try {
@@ -271,6 +258,9 @@ function AdminPage() {
 
   const handleCreateLeague = async (e) => {
     e.preventDefault(); setError("");
+  console.log("Token:", token);
+  console.log("Headers:", headers);
+  console.log("Body:", { name: leagueName, participantIds: selectedUsers, challengeIds: [] });
     try {
       const res = await fetch("http://localhost:5247/api/leagues", {
         method: "POST", headers,
@@ -288,7 +278,7 @@ function AdminPage() {
 
   return (
     <>
-      <style>{adminStyles}{pointRequestStyles}</style>
+      <style>{adminStyles}{pointRequestAdminStyles}</style>
       <div className="adm-root">
         <div className="adm-content">
 
@@ -304,9 +294,27 @@ function AdminPage() {
 
           {error && <div className="adm-alert"><span>⚠️</span> {error}</div>}
 
-          {/* ── RICHIESTE PUNTI IN ATTESA ── */}
-          <PointRequestsPanel token={token} />
-
+          <div
+            className="adm-card"
+            style={{ marginBottom: 24, cursor: "pointer" }}
+            onClick={() => navigate("/admin/requests")}
+          >
+            <div className="adm-card-header" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="adm-card-icon">⏳</div>
+                <div>
+                  <h2 className="adm-card-title">Richieste punti in attesa</h2>
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    Clicca per vedere e gestire tutte le richieste
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <PendingBadge token={token} />
+                <span style={{ color: "var(--text-muted)", fontSize: "1rem" }}>→</span>
+              </div>
+            </div>
+          </div>
           <div className="adm-stats">
             <div className="adm-stat-card">
               <div><p className="adm-stat-label">Utenti registrati</p><p className="adm-stat-value">{users.length}</p></div>
@@ -353,7 +361,7 @@ function AdminPage() {
                     <div className="adm-field" style={{ marginTop: "4px" }}>
                       <label className="adm-field-label">Ruolo</label>
                       <select
-                        className="adm-select"
+                        className="dark-select"
                         style={{ marginTop: "5px" }}
                         value={userForm.role}
                         onChange={e => setUserForm({ ...userForm, role: e.target.value })}
@@ -418,7 +426,7 @@ function AdminPage() {
                     </div>
                     <p className="adm-section-label">Partecipanti</p>
                     <div className="adm-participants">
-                      {users.map(u => (
+                      {participants.map(u => (
                         <label key={u.id} className={`adm-participant-item ${selectedUsers.includes(u.id) ? "selected" : ""}`}
                           onClick={() => handleSelectUser(u.id)}>
                           <input type="checkbox" readOnly checked={selectedUsers.includes(u.id)} />

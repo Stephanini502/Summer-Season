@@ -19,9 +19,12 @@ public class LeagueController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateLeague([FromBody] LeagueRequestDto dto)
     {
+        Console.WriteLine($"Claims ricevuti: {string.Join(", ", User.Claims.Select(c => c.Type + "=" + c.Value))}");
+
         try
         {
             var userIdClaim = User.FindFirst("id")?.Value;
+            Console.WriteLine($"userIdClaim: {userIdClaim}");
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized("User ID missing in token");
 
