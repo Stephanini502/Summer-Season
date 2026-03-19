@@ -16,6 +16,8 @@ namespace SummerSeason.data
         public DbSet<Result> Results { get; set; }
         public DbSet<Media> Media { get; set; }
         public DbSet<BonusMalus> BonusMalus { get; set; }
+        public DbSet<PointRequest> PointRequests { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
 
         public AppDbContext(DbContextOptions<AppDbContext> options)

@@ -9,7 +9,7 @@ using CloudinaryDotNet;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var key = "KEY_TEST_0000_ASDFGHJKLASDFGHJKL";
+var key = "SuMmEr_SeAsOn_0000";
 
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary");
 var account = new Account(
@@ -66,6 +66,8 @@ builder.Services.AddScoped<LeagueService>();
 builder.Services.AddScoped<ChallengeService>();
 builder.Services.AddScoped<ResultService>();
 builder.Services.AddScoped<MediaService>();
+builder.Services.AddScoped<PointRequestService>();
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

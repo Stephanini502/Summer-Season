@@ -13,13 +13,16 @@ const challengesPageStyles = `
     box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
   }
   .challenges-hero::after { content:'🏁'; position:absolute; right:32px; top:50%; transform:translateY(-50%); font-size:4.5rem; opacity:0.06; pointer-events:none; }
+
+  /* Badge completata */
   .challenge-success-badge {
     display:inline-flex; align-items:center; gap:6px; padding:8px 14px;
-    background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.3);
-    color:#34d399; border-radius:20px; font-size:0.75rem; font-weight:700;
+    background:rgba(251,191,36,0.1); border:1px solid rgba(251,191,36,0.25);
+    color:#fbbf24; border-radius:20px; font-size:0.75rem; font-weight:700;
     animation: successPop 0.25s ease both;
   }
   @keyframes successPop { 0%{transform:scale(0.85);opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1);opacity:1} }
+
   .challenges-count-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; animation:pgFadeUp 0.4s ease 0.15s both; }
   .challenges-count-label { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#8b97b8; }
   .challenges-count-line { flex:1; height:1px; background:rgba(255,255,255,0.06); }
@@ -79,16 +82,24 @@ const challengesPageStyles = `
   .cm-btn-confirm:disabled{opacity:0.5;cursor:not-allowed;transform:none}
   .cm-btn-cancel{font-family:'Plus Jakarta Sans',sans-serif;font-size:0.85rem;font-weight:600;background:rgba(255,255,255,0.04);color:#8b97b8;border:1px solid rgba(255,255,255,0.08);padding:12px 20px;border-radius:10px;cursor:pointer;transition:background 0.15s}
   .cm-btn-cancel:hover{background:rgba(255,255,255,0.08);color:#eef2ff}
+
+  /* Info approvazione */
+  .cm-approval-info {
+    display:flex; align-items:center; gap:8px;
+    padding:10px 14px; border-radius:10px; margin-top:14px;
+    background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.15);
+    font-size:0.75rem; color:#8b97b8; line-height:1.4;
+  }
 `;
 
 function ChallengesPage() {
-  const [challenges, setChallenges]   = useState([]);
-  const [bonusMalus, setBonusMalus]   = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [successId, setSuccessId]     = useState(null);
-  const [modal, setModal]             = useState(null);
+  const [challenges, setChallenges]     = useState([]);
+  const [bonusMalus, setBonusMalus]     = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [pendingId, setPendingId]       = useState(null); 
+  const [modal, setModal]               = useState(null);
   const [selectedMods, setSelectedMods] = useState([]);
-  const [submitting, setSubmitting]   = useState(false);
+  const [submitting, setSubmitting]     = useState(false);
 
   const userId  = parseInt(localStorage.getItem("userId"));
   const token   = localStorage.getItem("jwtToken");
@@ -106,7 +117,8 @@ function ChallengesPage() {
         if (!res.ok) return [];
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.$values ?? [];
-        return list.map(c => ({ ...c, leagueName: c.leagueName || league.name }));
+        // Salviamo anche l'id della lega su ogni sfida — serve per il PointRequest
+        return list.map(c => ({ ...c, leagueName: c.leagueName || league.name, leagueId: league.id }));
       }));
       const seen = new Set();
       setChallenges(nested.flat().filter(c => { if (seen.has(c.id)) return false; seen.add(c.id); return true; }));
@@ -135,7 +147,7 @@ function ChallengesPage() {
     return base + selectedMods.reduce((sum, id) => {
       const m = bonusMalus.find(b => b.id === id);
       if (!m) return sum;
-      const pts = Math.abs(m.points || 0); 
+      const pts = Math.abs(m.points || 0);
       return m.type === "Bonus" ? sum + pts : sum - pts;
     }, 0);
   };
@@ -143,27 +155,33 @@ function ChallengesPage() {
   const handleConfirm = async () => {
     if (!modal) return;
     setSubmitting(true);
-    const total = calcTotal();
     try {
-      const res = await fetch("http://localhost:5247/api/results", {
-        method: "POST", headers,
-        body: JSON.stringify({ userId, challengeId: modal.challenge.id, pointsAwarded: total }),
+      const res = await fetch("http://localhost:5247/api/pointrequests", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          receiverUserId:   userId,
+          challengeId:      modal.challenge.id,
+          leagueId:         modal.challenge.leagueId,
+          pointsRequested:  calcTotal(),
+          bonusMalusIds:    selectedMods
+        }),
       });
       if (!res.ok) throw new Error(await res.text() || "Errore");
-      setSuccessId(modal.challenge.id);
-      setTimeout(() => setSuccessId(null), 2500);
+      setPendingId(modal.challenge.id);
+      setTimeout(() => setPendingId(null), 4000);
       closeModal();
     } catch (err) { alert("Errore: " + err.message); }
     finally { setSubmitting(false); }
   };
 
-  /* Derived */
-  const totalPoints  = challenges.reduce((s, c) => s + (c.points || 0), 0);
-  const bonus        = bonusMalus.filter(b => b.type === "Bonus");
-  const malus        = bonusMalus.filter(b => b.type === "Malus");
-  const grandTotal   = calcTotal();
-  const bonusPts     = selectedMods.filter(id => bonusMalus.find(b=>b.id===id)?.type==="Bonus").reduce((s,id)=>s+Math.abs(bonusMalus.find(b=>b.id===id)?.points||0),0);
-  const malusPts     = selectedMods.filter(id => bonusMalus.find(b=>b.id===id)?.type==="Malus").reduce((s,id)=>s+Math.abs(bonusMalus.find(b=>b.id===id)?.points||0),0);
+  /* ── Derived ── */
+  const totalPoints = challenges.reduce((s, c) => s + (c.points || 0), 0);
+  const bonus       = bonusMalus.filter(b => b.type === "Bonus");
+  const malus       = bonusMalus.filter(b => b.type === "Malus");
+  const grandTotal  = calcTotal();
+  const bonusPts    = selectedMods.filter(id => bonusMalus.find(b=>b.id===id)?.type==="Bonus").reduce((s,id)=>s+Math.abs(bonusMalus.find(b=>b.id===id)?.points||0),0);
+  const malusPts    = selectedMods.filter(id => bonusMalus.find(b=>b.id===id)?.type==="Malus").reduce((s,id)=>s+Math.abs(bonusMalus.find(b=>b.id===id)?.points||0),0);
 
   if (loading) return (
     <><style>{sharedStyles}{challengesPageStyles}</style>
@@ -175,6 +193,7 @@ function ChallengesPage() {
     <>
       <style>{sharedStyles}{challengesPageStyles}</style>
 
+      {/* ── MODAL ── */}
       {modal && (
         <div className="cm-backdrop" onClick={closeModal}>
           <div className="cm-box" onClick={e => e.stopPropagation()}>
@@ -241,7 +260,7 @@ function ChallengesPage() {
 
               <div className="cm-total">
                 <div>
-                  <div className="cm-total-label">Punti totali assegnati</div>
+                  <div className="cm-total-label">Punti richiesti</div>
                   <div className="cm-total-breakdown">
                     <span className="bd-base">base +{modal.challenge.points}</span>
                     {bonusPts > 0 && <span className="bd-bonus">bonus +{bonusPts}</span>}
@@ -252,12 +271,17 @@ function ChallengesPage() {
                   {grandTotal > 0 ? "+" : ""}{grandTotal}
                 </div>
               </div>
+
+              <div className="cm-approval-info">
+                <span>⏳</span>
+                <span>La richiesta verrà inviata all'admin per approvazione. I punti saranno accreditati solo dopo conferma.</span>
+              </div>
             </div>
 
             <div className="cm-footer">
               <button className="cm-btn-cancel" onClick={closeModal}>Annulla</button>
               <button className="cm-btn-confirm" onClick={handleConfirm} disabled={submitting}>
-                {submitting ? "⏳ Salvataggio..." : `✓ Conferma (${grandTotal >= 0 ? "+" : ""}${grandTotal} pts)`}
+                {submitting ? "⏳ Invio..." : `Invia richiesta (${grandTotal >= 0 ? "+" : ""}${grandTotal} pts)`}
               </button>
             </div>
 
@@ -265,6 +289,7 @@ function ChallengesPage() {
         </div>
       )}
 
+      {/* ── PAGINA ── */}
       <div className="pg-root">
         <div className="pg-content">
 
@@ -324,8 +349,8 @@ function ChallengesPage() {
                       </div>
                     )}
                     <div className="pg-challenge-footer">
-                      {successId === c.id ? (
-                        <span className="challenge-success-badge">✓ Completata!</span>
+                      {pendingId === c.id ? (
+                        <span className="challenge-success-badge">⏳ In attesa di approvazione</span>
                       ) : (
                         <button className="pg-btn pg-btn-success pg-btn-sm" onClick={() => openModal(c)} style={{width:"100%"}}>
                           ✓ Segna completata
