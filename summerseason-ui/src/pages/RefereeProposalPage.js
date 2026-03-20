@@ -1,0 +1,287 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { adminStyles } from "../style/SharedStyles";
+
+const parseProposal = (message) => {
+  try {
+    const refMatch = message.match(/L'arbitro (.+?) propone/);
+    const challengeMatch = message.match(/sfida '(.+?)':/);
+    const nameMatch = message.match(/Nome: (.+?),/);
+    const descMatch = message.match(/Descrizione: (.+?),/);
+    const ptsMatch = message.match(/Punti: (\d+)/);
+    return {
+      referee: refMatch?.[1] ?? "—",
+      challenge: challengeMatch?.[1] ?? "—",
+      name: nameMatch?.[1] ?? "—",
+      description: descMatch?.[1] ?? "—",
+      points: ptsMatch?.[1] ?? "—"
+    };
+  } catch { return null; }
+};
+
+function RefereeProposalsPage() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("jwtToken");
+  const adminId = parseInt(localStorage.getItem("userId"));
+  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
+
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("unread"); 
+
+  const loadNotifications = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`http://localhost:5247/api/notifications/user/${adminId}`, { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.$values ?? [];
+      setNotifications(list.filter(n => (n.type ?? n.Type) === "ChallengeProposal"));
+    } catch { }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadNotifications(); }, []);
+
+  const markRead = async (id) => {
+    try {
+      await fetch(`http://localhost:5247/api/notifications/${id}/read`, { method: "PUT", headers });
+      setNotifications(prev => prev.map(n =>
+        (n.id ?? n.Id) === id ? { ...n, isRead: true, IsRead: true } : n
+      ));
+    } catch { }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await fetch(`http://localhost:5247/api/notifications/user/${adminId}/read-all`, { method: "PUT", headers });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true, IsRead: true })));
+    } catch { }
+  };
+
+  const filtered = filter === "unread"
+    ? notifications.filter(n => !(n.isRead ?? n.IsRead))
+    : notifications;
+
+  const unreadCount = notifications.filter(n => !(n.isRead ?? n.IsRead)).length;
+
+  return (
+    <>
+      <style>{adminStyles}{`
+        .notif-item {
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--border);
+          transition: background 0.14s;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: rgba(255,255,255,0.02); }
+        .notif-item.read { opacity: 0.55; }
+        .notif-icon {
+          width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+          background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+          display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }
+        .notif-field {
+          padding: 8px 12px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+        }
+        .notif-field-label {
+          font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+          text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px;
+        }
+        .notif-field-value {
+          font-size: 0.82rem; font-weight: 600; color: var(--text);
+        }
+        .notif-read-btn {
+          flex-shrink: 0; padding: 5px 12px;
+          border: 1px solid var(--border); border-radius: var(--radius-sm);
+          background: transparent; color: var(--text-muted);
+          font-size: 0.72rem; font-weight: 600; cursor: pointer;
+          transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .notif-read-btn:hover {
+          background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3);
+          color: var(--success);
+        }
+        .filter-tabs {
+          display: flex; gap: 4px; padding: 4px;
+          background: rgba(255,255,255,0.03);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+        }
+        .filter-tab {
+          padding: 7px 16px; border: none; border-radius: 6px;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-size: 0.78rem; font-weight: 600;
+          cursor: pointer; transition: all 0.15s;
+          background: transparent; color: var(--text-muted);
+        }
+        .filter-tab.active {
+          background: var(--ocean-dark); color: #fff;
+          box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+        }
+        .filter-tab:hover:not(.active) {
+          background: rgba(255,255,255,0.05); color: var(--text);
+        }
+      `}</style>
+
+      <div className="adm-root">
+        <div className="adm-content">
+
+          <header className="adm-header">
+            <div>
+              <button
+                onClick={() => navigate("/")}
+                style={{
+                  background: "none", border: "none", color: "var(--text-muted)",
+                  fontSize: "0.78rem", cursor: "pointer", marginBottom: 6,
+                  fontFamily: "'Plus Jakarta Sans', sans-serif", padding: 0,
+                  display: "flex", alignItems: "center", gap: 4
+                }}
+              >
+                ← Torna alla dashboard
+              </button>
+              <p className="adm-eyebrow">SummerSeason Platform</p>
+              <h1 className="adm-title">Proposte degli arbitri</h1>
+            </div>
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="adm-btn-primary"
+                style={{ background: "rgba(52,211,153,0.15)", color: "var(--success)", border: "1px solid rgba(52,211,153,0.25)", boxShadow: "none" }}
+              >
+                ✓ Segna tutte lette
+              </button>
+            )}
+          </header>
+
+          <div className="adm-stats">
+            <div className="adm-stat-card">
+              <div>
+                <p className="adm-stat-label">Proposte totali</p>
+                <p className="adm-stat-value">{notifications.length}</p>
+              </div>
+              <div className="adm-stat-icon-wrap">📋</div>
+            </div>
+            <div className="adm-stat-card">
+              <div>
+                <p className="adm-stat-label">Non lette</p>
+                <p className="adm-stat-value" style={{ color: unreadCount > 0 ? "var(--warning)" : "var(--ocean)" }}>
+                  {unreadCount}
+                </p>
+              </div>
+              <div className="adm-stat-icon-wrap">🔔</div>
+            </div>
+          </div>
+
+          <div className="adm-card">
+            <div className="adm-card-header" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="adm-card-icon" style={{ background: "rgba(245,158,11,0.15)", borderColor: "rgba(245,158,11,0.3)" }}>⚖️</div>
+                <h2 className="adm-card-title">Tutte le proposte</h2>
+              </div>
+              <div className="filter-tabs">
+                <button
+                  className={`filter-tab ${filter === "unread" ? "active" : ""}`}
+                  onClick={() => setFilter("unread")}
+                >
+                  Non lette {unreadCount > 0 && `(${unreadCount})`}
+                </button>
+                <button
+                  className={`filter-tab ${filter === "all" ? "active" : ""}`}
+                  onClick={() => setFilter("all")}
+                >
+                  Tutte ({notifications.length})
+                </button>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="adm-empty">Caricamento...</div>
+            ) : filtered.length === 0 ? (
+              <div className="adm-empty" style={{ padding: "48px 0" }}>
+                <div style={{ fontSize: "2rem", marginBottom: 8 }}>
+                  {filter === "unread" ? "✅" : "📭"}
+                </div>
+                <p style={{ fontWeight: 600, color: "var(--text)", marginBottom: 4 }}>
+                  {filter === "unread" ? "Tutto in ordine!" : "Nessuna proposta"}
+                </p>
+                <p>{filter === "unread" ? "Nessuna proposta non letta" : "Gli arbitri non hanno ancora inviato proposte"}</p>
+              </div>
+            ) : (
+              filtered.map(n => {
+                const p = parseProposal(n.message ?? n.Message ?? "");
+                const isRead = n.isRead ?? n.IsRead;
+                return (
+                  <div key={n.id ?? n.Id} className={`notif-item ${isRead ? "read" : ""}`}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                      <div className="notif-icon">⚖️</div>
+                      <div style={{ flex: 1 }}>
+
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "var(--text)" }}>
+                              {p?.referee ?? "Arbitro"}
+                            </span>
+                            <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>propone modifica a</span>
+                            <span style={{
+                              fontSize: "0.72rem", fontWeight: 700,
+                              background: "var(--ocean-light)", border: "1px solid var(--ocean-mid)",
+                              color: "var(--ocean)", padding: "2px 8px", borderRadius: 20
+                            }}>
+                              🏁 {p?.challenge ?? "—"}
+                            </span>
+                            {!isRead && (
+                              <span style={{
+                                fontSize: "0.62rem", fontWeight: 700,
+                                background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
+                                color: "var(--warning)", padding: "2px 8px", borderRadius: 20
+                              }}>
+                                NUOVA
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                            {new Date(n.createdAt ?? n.CreatedAt).toLocaleDateString("it-IT", {
+                              day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
+                            })}
+                          </div>
+                        </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 12 }}>
+                            <div className="notif-field">
+                                <div className="notif-field-label">Nome proposto</div>
+                                <div className="notif-field-value">{p?.name ?? "—"}</div>
+                            </div>
+                            <div className="notif-field">
+                                <div className="notif-field-label">Punti proposti</div>
+                                <div className="notif-field-value" style={{ color: "var(--success)" }}>+{p?.points ?? "—"} pts</div>
+                            </div>
+                            <div className="notif-field">
+                                <div className="notif-field-label">Descrizione proposta</div>
+                                <div className="notif-field-value" style={{ fontWeight: 400, lineHeight: 1.5 }}>{p?.description ?? "—"}</div>
+                            </div>
+                            </div>
+
+                        {!isRead && (
+                          <button className="notif-read-btn" onClick={() => markRead(n.id ?? n.Id)}>
+                            ✓ Segna come letta
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default RefereeProposalsPage;

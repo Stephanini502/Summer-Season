@@ -1,17 +1,21 @@
-// ChallengeService.cs
 using SummerSeason.models;
 using SummerSeason.data;
 using Microsoft.EntityFrameworkCore;
 using SummerSeason.Dtos;
 using SummerSeason.Mappers;
+using SummerSeason.Services;
+using SummerSeason.Enums;
 
 public class ChallengeService
 {
     private readonly AppDbContext _context;
 
-    public ChallengeService(AppDbContext context)
+    private readonly NotificationService _notService;
+
+    public ChallengeService(AppDbContext context, NotificationService notService)
     {
         _context = context;
+        _notService = notService;
     }
 
     public async Task<ChallengeResponseDto> AddChallenge(ChallengeRequestDto dto)
@@ -87,5 +91,29 @@ public class ChallengeService
 
         challenge.DeletedAt = DateTime.Now;
         await _context.SaveChangesAsync();
+    }
+
+        public async Task ProposeChangeAsync(int challengeId, ChallengeRequestDto dto, int refereeId)
+    {
+        var challenge = await _context.Challenges.FindAsync(challengeId)
+            ?? throw new Exception("Sfida non trovata");
+
+        var referee = await _context.Users.FindAsync(refereeId)
+            ?? throw new Exception("Arbitro non trovato");
+
+        var allUsers = await _context.Users.ToListAsync();
+        var admins = allUsers.Where(u => u.Roles.Contains(UserType.Admin)).ToList();
+
+        var message = $"L'arbitro {referee.Name} {referee.Surname} propone di modificare la sfida '{challenge.Name}': " +
+                      $"Nome: {dto.Name}, Descrizione: {dto.Description}, Punti: {dto.Points}";
+
+        foreach (var admin in admins)
+        {
+            await _notService.CreateAsync(
+                admin.Id,
+                "ChallengeProposal",
+                message
+            );
+        }
     }
 }

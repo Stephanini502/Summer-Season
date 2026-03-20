@@ -7,7 +7,7 @@ const roleMap = {
   0: "Admin", 1: "Referee", 2: "League Admin", 3: "Participant", 4: "Guest"
 };
 
-  function PendingBadge({ token }) {
+function PendingBadge({ token }) {
   const [count, setCount] = useState(0);
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
@@ -38,154 +38,39 @@ const roleMap = {
   );
 }
 
-function PointRequestsPanel({ token }) {
-  const [requests, setRequests] = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [note, setNote]         = useState({});
-  const [acting, setActing]     = useState(null);
-
-  const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
-
-  const fetchPending = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:5247/api/pointrequests/pending", { headers });
-      if (!res.ok) return;
-      const data = await res.json();
-      setRequests(Array.isArray(data) ? data : data.$values ?? []);
-    } catch { }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { fetchPending(); }, []);
-
-
-  const approve = async (id) => {
-    setActing(id);
-    try {
-      const res = await fetch(`http://localhost:5247/api/pointrequests/${id}/approve`, {
-        method: "PUT", headers,
-        body: JSON.stringify({ adminNote: note[id] || "" })
-      });
-      if (!res.ok) throw new Error();
-      setRequests(prev => prev.filter(r => r.id !== id));
-    } catch { alert("Errore durante l'approvazione"); }
-    finally { setActing(null); }
-  };
-
-  const reject = async (id) => {
-    setActing(id);
-    try {
-      const res = await fetch(`http://localhost:5247/api/pointrequests/${id}/reject`, {
-        method: "PUT", headers,
-        body: JSON.stringify({ adminNote: note[id] || "" })
-      });
-      if (!res.ok) throw new Error();
-      setRequests(prev => prev.filter(r => r.id !== id));
-    } catch { alert("Errore durante il rifiuto"); }
-    finally { setActing(null); }
-  };
-
-  return (
-    <div className="adm-card" style={{ marginBottom: 24 }}>
-      <div className="adm-card-header" style={{ justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div className="adm-card-icon">⏳</div>
-          <h2 className="adm-card-title">Richieste punti in attesa</h2>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {requests.length > 0 && <span className="pr-badge">{requests.length}</span>}
-          <button
-            onClick={fetchPending}
-            style={{ background: "none", border: "none", color: "#8b97b8", cursor: "pointer", fontSize: "1rem", padding: "4px 8px" }}
-            title="Aggiorna"
-          >
-            ↻
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div style={{ padding: "24px", textAlign: "center", color: "#8b97b8", fontSize: "0.8rem" }}>
-          Caricamento...
-        </div>
-      ) : requests.length === 0 ? (
-        <div className="pr-empty">
-          <div style={{ fontSize: "1.4rem", marginBottom: 6 }}>✓</div>
-          <p>Nessuna richiesta in attesa</p>
-        </div>
-      ) : (
-        requests.map(r => (
-          <div key={r.id} className="pr-item">
-            <div className="pr-item-top">
-              <div className="pr-user-avatar">
-                {(r.user?.name?.[0] ?? "?")}{(r.user?.surname?.[0] ?? "")}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#eef2ff" }}>
-                  {r.user?.name} {r.user?.surname}
-                  <span style={{ fontWeight: 500, color: "#8b97b8", marginLeft: 6, fontSize: "0.78rem" }}>
-                    @{r.user?.userName}
-                  </span>
-                </div>
-                <div style={{ fontSize: "0.78rem", color: "#8b97b8", marginTop: 2 }}>
-                  Sfida: <span style={{ color: "#eef2ff", fontWeight: 600 }}>{r.challenge?.name}</span>
-                </div>
-              </div>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div className="pr-points">+{r.pointsRequested} pts</div>
-                <div style={{ fontSize: "0.65rem", color: "#4b5675", marginTop: 2 }}>
-                  {new Date(r.createdAt).toLocaleDateString("it-IT", {
-                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <input
-              className="pr-note-input"
-              placeholder="Nota opzionale per l'utente..."
-              value={note[r.id] || ""}
-              onChange={e => setNote(prev => ({ ...prev, [r.id]: e.target.value }))}
-            />
-
-            <div className="pr-actions">
-              <button
-                className="adm-btn-submit"
-                style={{ flex: 1, background: "rgba(52,211,153,0.15)", color: "#34d399", border: "1px solid rgba(52,211,153,0.25)", boxShadow: "none" }}
-                disabled={acting === r.id}
-                onClick={() => approve(r.id)}
-              >
-                {acting === r.id ? "..." : "✓ Approva"}
-              </button>
-              <button
-                className="adm-btn-submit"
-                style={{ flex: 1, background: "rgba(248,113,113,0.12)", color: "#f87171", border: "1px solid rgba(248,113,113,0.22)", boxShadow: "none" }}
-                disabled={acting === r.id}
-                onClick={() => reject(r.id)}
-              >
-                {acting === r.id ? "..." : "✕ Rifiuta"}
-              </button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-  );
-}
+const parseProposal = (message) => {
+  try {
+    const refMatch = message.match(/L'arbitro (.+?) propone/);
+    const challengeMatch = message.match(/sfida '(.+?)':/);
+    const nameMatch = message.match(/Nome: (.+?),/);
+    const descMatch = message.match(/Descrizione: (.+?),/);
+    const ptsMatch = message.match(/Punti: (\d+)/);
+    return {
+      referee: refMatch?.[1] ?? "—",
+      challenge: challengeMatch?.[1] ?? "—",
+      name: nameMatch?.[1] ?? "—",
+      description: descMatch?.[1] ?? "—",
+      points: ptsMatch?.[1] ?? "—"
+    };
+  } catch { return null; }
+};
 
 function AdminPage() {
   const [users, setUsers] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [leagues, setLeagues] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const unreadCount = notifications.filter(n => !(n.isRead ?? n.IsRead)).length;
+
 
   const token = localStorage.getItem("jwtToken");
+  const adminId = parseInt(localStorage.getItem("userId"));
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-  const [userForm, setUserForm]       = useState({ name: "", surname: "", username: "", password: "", role: "4" });
-  const [leagueName, setLeagueName]   = useState("");
+  const [userForm, setUserForm] = useState({ name: "", surname: "", username: "", password: "", role: "4" });
+  const [leagueName, setLeagueName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
 
   const normalizeUser = (u) => {
@@ -200,17 +85,16 @@ function AdminPage() {
   });
 
   const loadUsers = async () => {
-  try {
-    const res = await fetch("http://localhost:5247/api/users", { headers });
-    if (!res.ok) throw new Error(`Errore caricamento utenti (${res.status})`);
-    let data = await res.json();
-    if (data.$values) data = data.$values;
-    const all = Array.isArray(data) ? data.map(normalizeUser) : [];
-    setUsers(all);
-    setParticipants(all.filter(u => !u.roles.includes(0))); 
-  } catch (err) { setError(err.message); }
+    try {
+      const res = await fetch("http://localhost:5247/api/users", { headers });
+      if (!res.ok) throw new Error(`Errore caricamento utenti (${res.status})`);
+      let data = await res.json();
+      if (data.$values) data = data.$values;
+      const all = Array.isArray(data) ? data.map(normalizeUser) : [];
+      setUsers(all);
+      setParticipants(all.filter(u => !u.roles.includes(0) && !u.roles.includes(1)));
+    } catch (err) { setError(err.message); }
   };
-
 
   const loadLeagues = async () => {
     try {
@@ -222,7 +106,37 @@ function AdminPage() {
     } catch (err) { setError(err.message); }
   };
 
-  useEffect(() => { loadUsers(); loadLeagues(); }, []);
+  const loadNotifications = async () => {
+    try {
+      const res = await fetch(`http://localhost:5247/api/notifications/user/${adminId}`, { headers });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : data.$values ?? [];
+      setNotifications(list.filter(n => (n.type ?? n.Type) === "ChallengeProposal" && !(n.isRead ?? n.IsRead)));
+    } catch { }
+  };
+
+  useEffect(() => {
+    loadUsers();
+    loadLeagues();
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const markRead = async (id) => {
+    try {
+      await fetch(`http://localhost:5247/api/notifications/${id}/read`, { method: "PUT", headers });
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch { }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await fetch(`http://localhost:5247/api/notifications/user/${adminId}/read-all`, { method: "PUT", headers });
+      setNotifications([]);
+    } catch { }
+  };
 
   const handleCreateUser = async (e) => {
     e.preventDefault(); setError("");
@@ -233,7 +147,7 @@ function AdminPage() {
         body: JSON.stringify({ Name: userForm.name, Surname: userForm.surname, Username: userForm.username, Password: userForm.password, Roles: [roleName], TotalPoints: 0 })
       });
       if (!res.ok) throw new Error("Errore creazione utente");
-      setUserForm({ name: "", surname: "", username: "", password: "", role: "3" });
+      setUserForm({ name: "", surname: "", username: "", password: "", role: "4" });
       loadUsers();
     } catch (err) { setError(err.message); }
   };
@@ -258,9 +172,6 @@ function AdminPage() {
 
   const handleCreateLeague = async (e) => {
     e.preventDefault(); setError("");
-  console.log("Token:", token);
-  console.log("Headers:", headers);
-  console.log("Body:", { name: leagueName, participantIds: selectedUsers, challengeIds: [] });
     try {
       const res = await fetch("http://localhost:5247/api/leagues", {
         method: "POST", headers,
@@ -278,7 +189,34 @@ function AdminPage() {
 
   return (
     <>
-      <style>{adminStyles}{pointRequestAdminStyles}</style>
+      <style>{adminStyles}{pointRequestAdminStyles}{`
+        .notif-item {
+          padding: 14px 20px;
+          border-bottom: 1px solid var(--border);
+          display: flex; align-items: flex-start;
+          justify-content: space-between; gap: 16px;
+          transition: background 0.14s;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: rgba(255,255,255,0.02); }
+        .notif-icon {
+          width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+          background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
+          display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        }
+        .notif-read-btn {
+          flex-shrink: 0; padding: 5px 12px;
+          border: 1px solid var(--border); border-radius: var(--radius-sm);
+          background: transparent; color: var(--text-muted);
+          font-size: 0.72rem; font-weight: 600; cursor: pointer;
+          transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .notif-read-btn:hover {
+          background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3);
+          color: var(--success);
+        }
+      `}</style>
+
       <div className="adm-root">
         <div className="adm-content">
 
@@ -293,6 +231,36 @@ function AdminPage() {
           </header>
 
           {error && <div className="adm-alert"><span>⚠️</span> {error}</div>}
+
+          <div
+            className="adm-card"
+            style={{ marginBottom: 24, cursor: "pointer", borderColor: unreadCount > 0 ? "rgba(245,158,11,0.25)" : undefined }}
+            onClick={() => navigate("/admin/proposals")}
+          >
+            <div className="adm-card-header" style={{ justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div className="adm-card-icon" style={unreadCount > 0 ? { background: "rgba(245,158,11,0.15)", borderColor: "rgba(245,158,11,0.3)" } : {}}>🔔</div>
+                <div>
+                  <h2 className="adm-card-title">Proposte modifiche da arbitri</h2>
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
+                    Clicca per vedere tutte le proposte
+                  </p>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {unreadCount > 0 && (
+                  <span style={{
+                    background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
+                    color: "var(--warning)", fontSize: "0.68rem", fontWeight: 800,
+                    padding: "3px 10px", borderRadius: 20
+                  }}>
+                    {unreadCount} nuove
+                  </span>
+                )}
+                <span style={{ color: "var(--text-muted)", fontSize: "1rem" }}>→</span>
+              </div>
+            </div>
+          </div>
 
           <div
             className="adm-card"
@@ -315,6 +283,7 @@ function AdminPage() {
               </div>
             </div>
           </div>
+
           <div className="adm-stats">
             <div className="adm-stat-card">
               <div><p className="adm-stat-label">Utenti registrati</p><p className="adm-stat-value">{users.length}</p></div>

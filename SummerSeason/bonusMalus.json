@@ -23,6 +23,12 @@
       "description": "Ti fai una con il ciclo",
       "points": 15,
       "type": "Bonus"  
+    },
+    {
+      "name": "Aborto",
+      "description": "La sfida la porti a termine con un aborto (a discrezione dell'arbitro)",
+      "points": 15,
+      "type": "Malus"  
     }
   ]
 }

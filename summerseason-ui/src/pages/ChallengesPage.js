@@ -117,7 +117,6 @@ function ChallengesPage() {
         if (!res.ok) return [];
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.$values ?? [];
-        // Salviamo anche l'id della lega su ogni sfida — serve per il PointRequest
         return list.map(c => ({ ...c, leagueName: c.leagueName || league.name, leagueId: league.id }));
       }));
       const seen = new Set();
@@ -192,7 +191,6 @@ function ChallengesPage() {
     <>
       <style>{sharedStyles}{challengesPageStyles}</style>
 
-      {/* ── MODAL ── */}
       {modal && (
         <div className="cm-backdrop" onClick={closeModal}>
           <div className="cm-box" onClick={e => e.stopPropagation()}>
@@ -288,7 +286,6 @@ function ChallengesPage() {
         </div>
       )}
 
-      {/* ── PAGINA ── */}
       <div className="pg-root">
         <div className="pg-content">
 

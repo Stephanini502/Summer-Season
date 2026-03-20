@@ -69,6 +69,7 @@ builder.Services.AddScoped<ResultService>();
 builder.Services.AddScoped<MediaService>();
 builder.Services.AddScoped<PointRequestService>();
 builder.Services.AddScoped<NotificationService>();
+builder.Services.AddScoped<LeagueRefereeService>();
 
 var app = builder.Build();
 

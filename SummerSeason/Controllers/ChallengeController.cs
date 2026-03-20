@@ -56,4 +56,19 @@ public class ChallengeController : ControllerBase
         await _service.RemoveChallengeById(id);
         return Ok($"Challenge with id: {id} successfully deleted");
     }      
+
+    [HttpPost("{challengeId}/propose")]
+    public async Task<IActionResult> ProposeChange(int challengeId, [FromBody] ChallengeRequestDto dto)
+    {
+        try
+        {
+            var refereeIdClaim = User.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(refereeIdClaim)) return Unauthorized();
+            int refereeId = int.Parse(refereeIdClaim);
+
+            await _service.ProposeChangeAsync(challengeId, dto, refereeId);
+            return Ok("Proposta inviata agli admin");
+        }
+        catch (Exception e) { return BadRequest(e.Message); }
+    }
 }

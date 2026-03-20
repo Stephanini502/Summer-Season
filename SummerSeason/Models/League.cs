@@ -26,5 +26,6 @@ public class League : BaseEntity
     public DateTime LastUpdate{get; set;}
 
     public List<Media> Media { get; set; } = new();
+    public List<LeagueReferee>? LeagueReferees{get; set;} = new List<LeagueReferee>();
 
 }

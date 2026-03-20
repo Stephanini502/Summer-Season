@@ -32,7 +32,7 @@ public class PointRequestService
         var challenge = await _ctx.Challenges.FindAsync(dto.ChallengeId);
         var allUsers = await _ctx.Users.ToListAsync();
         var admins = allUsers
-            .Where(u => u.Roles.Contains(UserType.Admin))
+            .Where(u => u.Roles.Contains(UserType.Admin) || u.Roles.Contains(UserType.Referee))
             .ToList();
 
         foreach (var admin in admins)
@@ -68,6 +68,20 @@ public class PointRequestService
                 Challenge = new { r.Challenge.Id, r.Challenge.Name, r.Challenge.Points },
                 r.LeagueId
             })
+            .ToListAsync();
+    }
+
+    public async Task<List<PointRequest>> GetPendingByRefereeAsync(int refereeId)
+    {
+        var leagueIds = await _ctx.LeagueReferees
+            .Where(lr => lr.UserId == refereeId)
+            .Select(lr => lr.LeagueId)
+            .ToListAsync();
+
+        return await _ctx.PointRequests
+            .Where(pr => pr.Status == "Pending" && leagueIds.Contains(pr.LeagueId))
+            .Include(pr => pr.User)
+            .Include(pr => pr.Challenge)
             .ToListAsync();
     }
 

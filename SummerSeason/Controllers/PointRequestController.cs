@@ -56,4 +56,15 @@ public class PointRequestController : ControllerBase
         catch (KeyNotFoundException e)      { return NotFound(e.Message); }
         catch (InvalidOperationException e) { return BadRequest(e.Message); }
     }
+
+    [HttpGet("pending/referee/{refereeId}")]
+    public async Task<IActionResult> GetPendingByReferee(int refereeId)
+    {
+        try
+        {
+            var requests = await _service.GetPendingByRefereeAsync(refereeId);
+            return Ok(requests);
+        }
+        catch (Exception e) { return BadRequest(e.Message); }
+    }
 }

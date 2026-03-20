@@ -76,13 +76,14 @@ function LeagueDataAdminPage() {
   const fetchLeagueData = async () => {
     setLoading(true); setError("");
     try {
-      const [leagueData, rankingData, participantsData, challengesData, mediaData, usersData] = await Promise.all([
+      const [leagueData, rankingData, participantsData, challengesData, mediaData, usersData, refereesData] = await Promise.all([
         fetch(`http://localhost:5247/api/leagues/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/challenges/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/media/league/${id}`, { headers }).then(r => r.json()),
         fetch(`http://localhost:5247/api/users`, { headers }).then(r => r.json()),
+        fetch(`http://localhost:5247/api/leagues/${id}/referees`, { headers }).then(r => r.json()), // ← nuovo
       ]);
 
       const normalized = normalizeLeague(leagueData);
@@ -98,8 +99,10 @@ function LeagueDataAdminPage() {
         roles: rolesById[u.id ?? u.Id] ?? [],
       }));
 
-      setReferees(allNormalized.filter(u => u.roles.includes(REFEREE_ROLE)));
-
+      const leagueReferees = normalizeValues(refereesData).map(normalizeUser);
+      setReferees(leagueReferees);
+      const refereeIds = new Set(leagueReferees.map(r => r.id));
+      
       const allRanked = normalizeValues(rankingData).map(u => ({
         ...normalizeUser(u),
         roles: rolesById[u.id ?? u.Id] ?? [],
@@ -121,8 +124,7 @@ function LeagueDataAdminPage() {
 
       setAllEligibleReferees(
         allNormalized.filter(u =>
-          isEligibleReferee(u) &&
-          !u.roles.includes(REFEREE_ROLE)
+          !u.roles.includes(ADMIN_ROLE) && !refereeIds.has(u.id)
         )
       );
 
@@ -134,44 +136,30 @@ function LeagueDataAdminPage() {
     }
   };
 
-  const refreshAll = async () => {
-    try {
-      const [rankingData, participantsData, usersData] = await Promise.all([
-        fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
-        fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers }).then(r => r.json()),
-        fetch(`http://localhost:5247/api/users`, { headers }).then(r => r.json()),
-      ]);
+    const refreshAll = async () => {
+      try {
+        const [rankingData, participantsData, usersData, refereesData] = await Promise.all([
+          fetch(`http://localhost:5247/api/leagues/${id}/ranking`, { headers }).then(r => r.json()),
+          fetch(`http://localhost:5247/api/leagues/${id}/participants`, { headers }).then(r => r.json()),
+          fetch(`http://localhost:5247/api/users`, { headers }).then(r => r.json()),
+          fetch(`http://localhost:5247/api/leagues/${id}/referees`, { headers }).then(r => r.json()),
+        ]);
 
-      const allNormalized = normalizeValues(usersData).map(normalizeUser);
-      const rolesById = {};
-      allNormalized.forEach(u => { rolesById[u.id] = u.roles; });
+        const allNormalized = normalizeValues(usersData).map(normalizeUser);
+        const leagueReferees = normalizeValues(refereesData).map(normalizeUser);
+        setReferees(leagueReferees);
+        const refereeIds = new Set(leagueReferees.map(r => r.id));
 
-      const allMembers = normalizeValues(participantsData).map(u => ({
-        ...normalizeUser(u),
-        roles: rolesById[u.id ?? u.Id] ?? [],
-      }));
+        const allMembers = normalizeValues(participantsData).map(normalizeUser);
+        const memberIds = new Set(allMembers.map(m => m.id));
 
-      setReferees(allMembers.filter(u => u.roles.includes(REFEREE_ROLE)));
+        const allRanked = normalizeValues(rankingData).map(normalizeUser);
+        setParticipants(allRanked.filter(isParticipant).sort((a, b) => b.totalPoints - a.totalPoints));
 
-      const allRanked = normalizeValues(rankingData).map(u => ({
-        ...normalizeUser(u),
-        roles: rolesById[u.id ?? u.Id] ?? [],
-      }));
-
-      setParticipants(
-        allRanked
-          .filter(isParticipant)
-          .sort((a, b) => b.totalPoints - a.totalPoints)
-      );
-
-      const memberIds = new Set(allMembers.map(m => m.id));
-      setAllUsers(allNormalized.filter(u =>
-        !memberIds.has(u.id) && isParticipant(u)
-      ));
-      setAllEligibleReferees(allNormalized.filter(isEligibleReferee));
-
-    } catch (err) { console.error("Errore refresh:", err); }
-  };
+        setAllUsers(allNormalized.filter(u => !memberIds.has(u.id) && isParticipant(u)));
+        setAllEligibleReferees(allNormalized.filter(u => !u.roles.includes(ADMIN_ROLE) && !refereeIds.has(u.id)));
+      } catch (err) { console.error("Errore refresh:", err); }
+    };
 
   useEffect(() => { fetchLeagueData(); }, [id]);
 
@@ -214,39 +202,18 @@ function LeagueDataAdminPage() {
     } catch (err) { alert(err.message); }
   };
 
-  const handleSetReferee = async () => {
-    if (!selectedRefereeId) return;
-
-    try {
-      const res = await fetch(
-        `http://localhost:5247/api/users/${selectedRefereeId}/Referee`,
-        { method: "PUT", headers }
-      );
-
-      if (!res.ok) throw new Error("Errore assegnazione");
-
-      const selectedUser = allEligibleReferees.find(
-        u => u.id.toString() === selectedRefereeId.toString()
-      );
-
-      if (selectedUser) {
-        setReferees(prev => {
-          if (prev.some(r => r.id === selectedUser.id)) return prev;
-          return [...prev, selectedUser];
-        });
-
-        setAllEligibleReferees(prev =>
-          prev.filter(u => u.id.toString() !== selectedRefereeId.toString())
+    const handleSetReferee = async () => {
+      if (!selectedRefereeId) return;
+      try {
+        const res = await fetch(
+          `http://localhost:5247/api/leagues/${id}/referees/${selectedRefereeId}`,
+          { method: "POST", headers }
         );
-      }
-
-      setSelectedRefereeId("");
-
-
-    } catch (err) {
-      alert(err.message);
-    }
-  };
+        if (!res.ok) throw new Error("Errore assegnazione");
+        setSelectedRefereeId("");
+        await refreshAll();
+      } catch (err) { alert(err.message); }
+    };
 
   const triggerUpload = (type, entityId, mediaType) => {
     setUploadingFor({ type, id: entityId, mediaType });
@@ -379,7 +346,7 @@ function LeagueDataAdminPage() {
           </div>
 
           {challenges.length > 0 && (
-            <div className="pg-card" style={{ marginBottom: 0 }}>
+            <div className="pg-card" style={{ marginBottom: 0 , marginTop: 20}}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left"><div className="pg-card-icon">🏁</div><h2 className="pg-card-title">Media delle sfide</h2></div>
                 <span className="pg-badge pg-badge-sun">{challenges.length} sfide</span>
@@ -439,7 +406,7 @@ function LeagueDataAdminPage() {
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
             <div className="pg-col" style={{ gap: 20 }}>
 
-              <div className="pg-card" style={{ marginBottom: 0 }}>
+              <div className="pg-card" style={{ marginBottom: 0, marginTop: 20 }}>
                 <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">ℹ️</div><h2 className="pg-card-title">Informazioni</h2></div></div>
                 <div style={{ padding: "16px 24px" }}>
                   <div className="pg-info-row"><span className="pg-info-row-label">Partecipanti</span><span className="pg-info-row-value">{participants.length}</span></div>
@@ -495,7 +462,7 @@ function LeagueDataAdminPage() {
 
             <div className="pg-col" style={{ gap: 20 }}>
 
-              <div className="pg-card" style={{ marginBottom: 0 }}>
+              <div className="pg-card" style={{ marginBottom: 0, marginTop: 20 }}>
                 <div className="pg-card-header">
                   <div className="pg-card-header-left"><div className="pg-card-icon">➕</div><h2 className="pg-card-title">Aggiungi partecipante</h2></div>
                   <span className="pg-badge pg-badge-blue">{allUsers.length} disponibili</span>

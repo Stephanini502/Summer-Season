@@ -18,6 +18,7 @@ namespace SummerSeason.data
         public DbSet<BonusMalus> BonusMalus { get; set; }
         public DbSet<PointRequest> PointRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<LeagueReferee> LeagueReferees { get; set; }
 
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
@@ -28,6 +29,18 @@ namespace SummerSeason.data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<LeagueReferee>()
+            .HasKey(lr => new { lr.LeagueId, lr.UserId });
+
+            modelBuilder.Entity<LeagueReferee>()
+                .HasOne(lr => lr.League)
+                .WithMany(l => l.LeagueReferees)
+                .HasForeignKey(lr => lr.LeagueId);
+
+            modelBuilder.Entity<LeagueReferee>()
+                .HasOne(lr => lr.User)
+                .WithMany(u => u.LeagueReferees)
+                .HasForeignKey(lr => lr.UserId);
             
             modelBuilder.Entity<Media>()
                 .HasOne(m => m.Challenge)

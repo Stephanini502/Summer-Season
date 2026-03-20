@@ -49,4 +49,18 @@ public class NotificationService
 
         await _ctx.SaveChangesAsync();
     }
+
+    public async Task CreateAsync(int receiverUserId, string type, string message, int? pointRequestId = null)
+    {
+        var notification = new Notification
+        {
+            ReceiverUserId = receiverUserId,
+            Type = type,
+            Message = message,
+            PointRequestId = pointRequestId,
+            IsRead = false
+        };
+        await _ctx.Notifications.AddAsync(notification);
+        await _ctx.SaveChangesAsync();
+    }
 }

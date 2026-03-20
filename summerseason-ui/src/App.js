@@ -14,7 +14,9 @@ import ChallengesPage from "./pages/ChallengesPage";
 import ChallengesAdminPage from "./pages/ChallengesAdminPage";
 import LeagueDataAdminPage from "./pages/LeagueDataAdminPage";
 import PointRequestPage from "./pages/PointRequestPage";
-
+import RefereePage from "./pages/RefereePage";
+import ChallengesRefereePage from "./pages/ChallengesRefereePage";
+import RefereeProposalsPage from "./pages/RefereeProposalPage";
 
 const globalReset = `
   *, *::before, *::after {
@@ -94,6 +96,7 @@ function App() {
   };
 
   const isAdmin = userRoles.includes("Admin");
+  const isReferee = userRoles.includes("Referee");
 
   return (
     <Router>
@@ -105,14 +108,16 @@ function App() {
         <Routes>
           <Route path="/login"    element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={isLoggedIn ? <Navigate to="/" replace /> : <SignUpPage onLoginSuccess={handleLoginSuccess} />} />
-          <Route path="/"         element={isLoggedIn ? (isAdmin ? <AdminPage /> : <Navigate to="/profile" replace />) : <MainPage />} />
+          <Route path="/"         element={isLoggedIn ? (isAdmin ? <AdminPage />: isReferee? <Navigate to="/referee" replace />: <Navigate to="/profile" replace />): <MainPage />} />
           <Route path="/profile"  element={isLoggedIn ? <UserDataPage /> : <Navigate to="/login" replace />} />
           <Route path="/admin"    element={isLoggedIn && isAdmin ? <AdminPage /> : <Navigate to="/login" replace />} />
-          <Route path="/challenges" element={isLoggedIn && isAdmin ? <ChallengesAdminPage /> : <ChallengesPage />} />
           <Route path="/user/:id" element={isLoggedIn ? <UserDataPage /> : <MainPage />} />
           <Route path="/league/:id" element={isLoggedIn && isAdmin ? <LeagueDataAdminPage /> : <LeagueDataPage />} />
           <Route path="*"         element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
           <Route path="/admin/requests" element={isLoggedIn && isAdmin ? <PointRequestPage /> : <Navigate to="/login" replace />} />
+          <Route path="/referee" element={isLoggedIn && isReferee ? <RefereePage /> : <Navigate to="/login" replace />} />
+          <Route path="/challenges"element={isAdmin? <ChallengesAdminPage />: isReferee? <ChallengesRefereePage />: <ChallengesPage />}/>
+          <Route path="/admin/proposals" element={isLoggedIn && isAdmin ? <RefereeProposalsPage /> : <Navigate to="/login" replace />} />
         </Routes>
       </div>
 

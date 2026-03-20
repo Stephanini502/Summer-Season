@@ -19,6 +19,7 @@ public class User : BaseEntity
     public List<Result>? Results{get; set;}
     public List<League>? Leagues{get; set;}
     public List<League>? AdminLeagues{get; set;}
+    public List<LeagueReferee>? LeagueReferees{get; set;} = new List<LeagueReferee>();
     public string? AvatarUrl { get; set; }
 
 
