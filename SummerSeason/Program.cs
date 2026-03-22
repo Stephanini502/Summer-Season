@@ -5,6 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using SummerSeason.Services;
 using CloudinaryDotNet;
+using SummerSeason.models;
+using SummerSeason.Hubs;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +39,20 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(key))
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
+    };
 });
 
 builder.Services.AddControllers()
@@ -50,9 +66,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedFrontend",
         policy => policy
-            .AllowAnyOrigin()
+            .WithOrigins("http://localhost:3000") 
             .AllowAnyHeader()
-            .AllowAnyMethod());
+            .AllowAnyMethod()
+            .AllowCredentials()); 
 });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -70,8 +87,13 @@ builder.Services.AddScoped<MediaService>();
 builder.Services.AddScoped<PointRequestService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<LeagueRefereeService>();
+builder.Services.AddSignalR();
+builder.Services.AddScoped<ChatHub>();
+
 
 var app = builder.Build();
+
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,4 +123,5 @@ app.UseCors("AllowedFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<ChatHub>("/hubs/chat");
 app.Run();

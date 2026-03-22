@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using SummerSeason.Services;
 using SummerSeason.Dtos;
 using SummerSeason.models;
+using SummerSeason.Enums;
+using SummerSeason.data;
+using Microsoft.EntityFrameworkCore;
+
 
 namespace SummerSeason.Controllers;
 
@@ -10,10 +14,12 @@ namespace SummerSeason.Controllers;
 public class LeagueController : ControllerBase
 {
     private readonly LeagueService _service;
+    private readonly AppDbContext _context;
 
-    public LeagueController(LeagueService service)
+    public LeagueController(LeagueService service, AppDbContext context)
     {
         _service = service;
+        _context = context;
     }
 
     [HttpPost]
@@ -160,4 +166,5 @@ public class LeagueController : ControllerBase
             return BadRequest($"Error removing user {userId} from league {leagueId}: " + e.Message);
         }
     }
+
 }

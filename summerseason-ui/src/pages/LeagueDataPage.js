@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { sharedStyles } from "../style/SharedStyles";
 import { mediaStyles } from "../style/SharedStyles";
+import ChatRoom from "../components/ChatRoom";
 
 function LeagueDataPage() {
   const { id } = useParams();
@@ -44,7 +45,10 @@ function LeagueDataPage() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { fetchLeagueData(); }, [id]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    fetchLeagueData();
+  }, [id]);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -124,6 +128,7 @@ function LeagueDataPage() {
       <div className="pg-root">
         <div className="pg-content">
 
+          {/* HERO */}
           <div className="pg-hero">
             <div>
               <p className="pg-hero-eyebrow">Pagina Lega</p>
@@ -133,6 +138,7 @@ function LeagueDataPage() {
             <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
           </div>
 
+          {/* STATS */}
           <div className="pg-stats">
             <div className="pg-stat-card"><div><p className="pg-stat-label">Partecipanti</p><p className="pg-stat-value">{participants.length}</p></div><div className="pg-stat-icon">👥</div></div>
             <div className="pg-stat-card"><div><p className="pg-stat-label">Sfide</p><p className="pg-stat-value">{challenges.length}</p></div><div className="pg-stat-icon">🏁</div></div>
@@ -145,52 +151,12 @@ function LeagueDataPage() {
             )}
           </div>
 
-          <div className="pg-card" style={{marginBottom:0}}>
-            <div className="pg-card-header">
-              <div className="pg-card-header-left"><div className="pg-card-icon">🖼️</div><h2 className="pg-card-title">Media della lega</h2></div>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                {uploadProgress && <span className="media-progress">⏳ {uploadProgress}</span>}
-                <span className="pg-badge pg-badge-blue">{(league.media||[]).length} file</span>
-              </div>
-            </div>
-            <div className="media-section">
-              <div>
-                <p className="media-block-title">📷 Immagini ({leagueImages.length})</p>
-                {leagueImages.length > 0 && (
-                  <div className="media-grid" style={{marginBottom:10}}>
-                    {leagueImages.map((m,idx) => (
-                      <div key={m.id} className="media-item">
-                        <img src={m.url} alt="" className="media-thumb" onClick={()=>openLightbox(leagueImages,idx)}/>
-                        <div className="media-item-overlay">
-                          <button className="media-icon-btn media-icon-btn-view" onClick={()=>openLightbox(leagueImages,idx)}>🔍</button>
-                          <button className="media-icon-btn media-icon-btn-dl"   onClick={()=>handleDownload(m.url)}>⬇️</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button className="media-upload-btn" onClick={()=>triggerUpload("league",league.id,"image")}>📷 {leagueImages.length>0?"Aggiungi altra immagine":"Carica immagine"}</button>
-              </div>
-              <div>
-                <p className="media-block-title">🎬 Video ({leagueVideos.length})</p>
-                {leagueVideos.length > 0 && (
-                  <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
-                    {leagueVideos.map(m => (
-                      <div key={m.id} className="video-wrap media-item" style={{padding:6}}>
-                        <video src={m.url} controls className="media-video"/>
-                        <div className="video-actions"><button className="video-icon-btn" onClick={()=>handleDownload(m.url)} style={{background:"#3b82f6"}}>⬇️</button></div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button className="media-upload-btn" onClick={()=>triggerUpload("league",league.id,"video")}>🎬 {leagueVideos.length>0?"Aggiungi altro video":"Carica video"}</button>
-              </div>
-            </div>
-          </div>
-
+          {/* CLASSIFICA + SFIDE */}
           <div className="pg-grid-2">
-            <div className="pg-card" style={{marginBottom:0, marginTop: 20}}>
-              <div className="pg-card-header"><div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Classifica partecipanti</h2></div></div>
+            <div className="pg-card" style={{marginBottom:0}}>
+              <div className="pg-card-header">
+                <div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Classifica partecipanti</h2></div>
+              </div>
               <ul className="pg-list">
                 {participants.length > 0 ? participants.map((u,idx) => (
                   <li key={u.id} className="pg-list-item clickable" onClick={()=>navigate(`/user/${u.id}`)}>
@@ -204,7 +170,7 @@ function LeagueDataPage() {
               </ul>
             </div>
 
-            <div className="pg-card" style={{marginBottom:0, marginTop: 20}}>
+            <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left"><div className="pg-card-icon">🏁</div><h2 className="pg-card-title">Sfide di questa lega</h2></div>
                 {challenges.length>0 && <span className="pg-badge pg-badge-sun">{challenges.length} sfide</span>}
@@ -222,41 +188,96 @@ function LeagueDataPage() {
                           <div><div className="pg-list-item-name">{c.name}</div><div className="pg-list-item-sub">{c.description}</div></div>
                           <span className="pg-badge pg-badge-green">+{c.points} pts</span>
                         </div>
-                        <div className="challenge-media-wrap">
-                          {ci.length > 0 && (
-                            <div className="media-grid" style={{marginBottom:8}}>
-                              {ci.map((m,idx) => (
-                                <div key={m.id} className="media-item">
-                                  <img src={m.url} alt={c.name} className="media-thumb" style={{maxHeight:120}} onClick={()=>openLightbox(ci,idx)}/>
-                                  <div className="media-item-overlay">
-                                    <button className="media-icon-btn media-icon-btn-view" onClick={()=>openLightbox(ci,idx)}>🔍</button>
-                                    <button className="media-icon-btn media-icon-btn-dl"   onClick={()=>handleDownload(m.url)}>⬇️</button>
-                                  </div>
+                        {ci.length > 0 && (
+                          <div className="media-grid" style={{marginBottom:8, padding:"0 16px"}}>
+                            {ci.map((m,idx) => (
+                              <div key={m.id} className="media-item">
+                                <img src={m.url} alt={c.name} className="media-thumb" style={{maxHeight:120}} onClick={()=>openLightbox(ci,idx)}/>
+                                <div className="media-item-overlay">
+                                  <button className="media-icon-btn media-icon-btn-view" onClick={()=>openLightbox(ci,idx)}>🔍</button>
+                                  <button className="media-icon-btn media-icon-btn-dl" onClick={()=>handleDownload(m.url)}>⬇️</button>
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                          {cv.length > 0 && (
-                            <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:8}}>
-                              {cv.map(m => (
-                                <div key={m.id} className="video-wrap media-item" style={{padding:4}}>
-                                  <video src={m.url} controls className="media-video" style={{maxHeight:150}}/>
-                                  <div className="video-actions"><button className="video-icon-btn" onClick={()=>handleDownload(m.url)} style={{background:"#3b82f6"}}>⬇️</button></div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                            <button className="media-upload-btn" onClick={()=>triggerUpload("challenge",c.id,"image")}>📷 {ci.length>0?"Aggiungi immagine":"Carica immagine"}</button>
-                            <button className="media-upload-btn" onClick={()=>triggerUpload("challenge",c.id,"video")}>🎬 {cv.length>0?"Aggiungi video":"Carica video"}</button>
+                              </div>
+                            ))}
                           </div>
-                        </div>
+                        )}
+                        {cv.length > 0 && (
+                          <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:8,padding:"0 16px"}}>
+                            {cv.map(m => (
+                              <div key={m.id} className="video-wrap media-item" style={{padding:4}}>
+                                <video src={m.url} controls className="media-video" style={{maxHeight:150}}/>
+                                <div className="video-actions"><button className="video-icon-btn" onClick={()=>handleDownload(m.url)} style={{background:"#3b82f6"}}>⬇️</button></div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
               )}
             </div>
+          </div>
+
+          {/* CHAT + MEDIA */}
+          <div className="pg-grid-2" style={{ marginTop: 20 }}>
+
+            <div className="pg-card" style={{marginBottom:0}}>
+              <div className="pg-card-header">
+                <div className="pg-card-header-left">
+                  <div className="pg-card-icon">💬</div>
+                  <h2 className="pg-card-title">Chat della lega</h2>
+                </div>
+                <span className="pg-badge pg-badge-blue">{participants.length} partecipanti</span>
+              </div>
+              <div style={{ padding: "16px" }}>
+                <ChatRoom leagueId={id} roomType="league" />
+              </div>
+            </div>
+
+            <div className="pg-card" style={{marginBottom:0}}>
+              <div className="pg-card-header">
+                <div className="pg-card-header-left"><div className="pg-card-icon">🖼️</div><h2 className="pg-card-title">Media della lega</h2></div>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  {uploadProgress && <span className="media-progress">⏳ {uploadProgress}</span>}
+                  <span className="pg-badge pg-badge-blue">{(league.media||[]).length} file</span>
+                </div>
+              </div>
+              <div className="media-section">
+                <div>
+                  <p className="media-block-title">📷 Immagini ({leagueImages.length})</p>
+                  {leagueImages.length > 0 && (
+                    <div className="media-grid" style={{marginBottom:10}}>
+                      {leagueImages.map((m,idx) => (
+                        <div key={m.id} className="media-item">
+                          <img src={m.url} alt="" className="media-thumb" onClick={()=>openLightbox(leagueImages,idx)}/>
+                          <div className="media-item-overlay">
+                            <button className="media-icon-btn media-icon-btn-view" onClick={()=>openLightbox(leagueImages,idx)}>🔍</button>
+                            <button className="media-icon-btn media-icon-btn-dl" onClick={()=>handleDownload(m.url)}>⬇️</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button className="media-upload-btn" onClick={()=>triggerUpload("league",league.id,"image")}>📷 {leagueImages.length>0?"Aggiungi altra immagine":"Carica immagine"}</button>
+                </div>
+                <div>
+                  <p className="media-block-title">🎬 Video ({leagueVideos.length})</p>
+                  {leagueVideos.length > 0 && (
+                    <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:10}}>
+                      {leagueVideos.map(m => (
+                        <div key={m.id} className="video-wrap media-item" style={{padding:6}}>
+                          <video src={m.url} controls className="media-video"/>
+                          <div className="video-actions"><button className="video-icon-btn" onClick={()=>handleDownload(m.url)} style={{background:"#3b82f6"}}>⬇️</button></div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button className="media-upload-btn" onClick={()=>triggerUpload("league",league.id,"video")}>🎬 {leagueVideos.length>0?"Aggiungi altro video":"Carica video"}</button>
+                </div>
+              </div>
+            </div>
+
           </div>
 
         </div>

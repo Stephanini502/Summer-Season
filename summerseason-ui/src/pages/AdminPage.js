@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminStyles } from "../style/SharedStyles";
 import { pointRequestAdminStyles } from "../style/SharedStyles";
@@ -38,23 +38,6 @@ function PendingBadge({ token }) {
   );
 }
 
-const parseProposal = (message) => {
-  try {
-    const refMatch = message.match(/L'arbitro (.+?) propone/);
-    const challengeMatch = message.match(/sfida '(.+?)':/);
-    const nameMatch = message.match(/Nome: (.+?),/);
-    const descMatch = message.match(/Descrizione: (.+?),/);
-    const ptsMatch = message.match(/Punti: (\d+)/);
-    return {
-      referee: refMatch?.[1] ?? "—",
-      challenge: challengeMatch?.[1] ?? "—",
-      name: nameMatch?.[1] ?? "—",
-      description: descMatch?.[1] ?? "—",
-      points: ptsMatch?.[1] ?? "—"
-    };
-  } catch { return null; }
-};
-
 function AdminPage() {
   const [users, setUsers] = useState([]);
   const [participants, setParticipants] = useState([]);
@@ -62,8 +45,6 @@ function AdminPage() {
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const unreadCount = notifications.filter(n => !(n.isRead ?? n.IsRead)).length;
-
 
   const token = localStorage.getItem("jwtToken");
   const adminId = parseInt(localStorage.getItem("userId"));
@@ -72,6 +53,15 @@ function AdminPage() {
   const [userForm, setUserForm] = useState({ name: "", surname: "", username: "", password: "", role: "4" });
   const [leagueName, setLeagueName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
+
+  // Ricerca partecipanti
+  const [searchQuery, setSearchQuery]     = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showDropdown, setShowDropdown]   = useState(false);
+  const searchRef   = useRef();
+  const dropdownRef = useRef();
+
+  const unreadCount = notifications.filter(n => !(n.isRead ?? n.IsRead)).length;
 
   const normalizeUser = (u) => {
     let roles = u.roles ?? u.Roles ?? [];
@@ -124,19 +114,35 @@ function AdminPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const markRead = async (id) => {
-    try {
-      await fetch(`http://localhost:5247/api/notifications/${id}/read`, { method: "PUT", headers });
-      setNotifications(prev => prev.filter(n => n.id !== id));
-    } catch { }
-  };
+  // Ricerca partecipanti con debounce
+  useEffect(() => {
+    if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
+    const timeout = setTimeout(() => {
+      const filtered = participants
+        .filter(u => {
+          const un = u.userName.toLowerCase();
+          const name = `${u.name} ${u.surname}`.toLowerCase();
+          const q = searchQuery.toLowerCase();
+          return (un.includes(q) || name.includes(q)) && !selectedUsers.includes(u.id);
+        })
+        .slice(0, 8);
+      setSearchResults(filtered);
+      setShowDropdown(filtered.length > 0);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [searchQuery, selectedUsers, participants]);
 
-  const markAllRead = async () => {
-    try {
-      await fetch(`http://localhost:5247/api/notifications/user/${adminId}/read-all`, { method: "PUT", headers });
-      setNotifications([]);
-    } catch { }
-  };
+  // Chiudi dropdown cliccando fuori
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+          searchRef.current && !searchRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   const handleCreateUser = async (e) => {
     e.preventDefault(); setError("");
@@ -178,48 +184,53 @@ function AdminPage() {
         body: JSON.stringify({ name: leagueName, participantIds: selectedUsers, challengeIds: [] })
       });
       if (!res.ok) throw new Error("Errore creazione lega");
-      setLeagueName(""); setSelectedUsers([]);
+      setLeagueName(""); setSelectedUsers([]); setSearchQuery("");
       loadLeagues();
     } catch (err) { setError(err.message); }
-  };
-
-  const handleSelectUser = (userId) => {
-    setSelectedUsers(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]);
   };
 
   return (
     <>
       <style>{adminStyles}{pointRequestAdminStyles}{`
-        .notif-item {
-          padding: 14px 20px;
-          border-bottom: 1px solid var(--border);
-          display: flex; align-items: flex-start;
-          justify-content: space-between; gap: 16px;
-          transition: background 0.14s;
+        .user-search-wrap { position: relative; }
+        .user-search-dropdown {
+          position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+          background: #1a2236; border: 1px solid rgba(255,255,255,0.1);
+          border-radius: var(--radius-sm); margin-top: 4px;
+          max-height: 200px; overflow-y: auto;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
-        .notif-item:last-child { border-bottom: none; }
-        .notif-item:hover { background: rgba(255,255,255,0.02); }
-        .notif-icon {
-          width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
-          background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3);
-          display: flex; align-items: center; justify-content: center; font-size: 1rem;
+        .user-search-item {
+          padding: 10px 14px; cursor: pointer;
+          display: flex; align-items: center; gap: 10px;
+          transition: background 0.14s; font-size: 0.83rem;
         }
-        .notif-read-btn {
-          flex-shrink: 0; padding: 5px 12px;
-          border: 1px solid var(--border); border-radius: var(--radius-sm);
-          background: transparent; color: var(--text-muted);
-          font-size: 0.72rem; font-weight: 600; cursor: pointer;
-          transition: all 0.15s; font-family: 'Plus Jakarta Sans', sans-serif;
+        .user-search-item:hover { background: rgba(96,165,250,0.1); }
+        .user-search-avatar {
+          width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+          background: linear-gradient(135deg, rgba(96,165,250,0.2), rgba(251,191,36,0.15));
+          border: 1px solid rgba(251,191,36,0.2);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 0.75rem; font-weight: 800; color: #fbbf24;
         }
-        .notif-read-btn:hover {
-          background: rgba(52,211,153,0.1); border-color: rgba(52,211,153,0.3);
-          color: var(--success);
+        .selected-user-chip {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 4px 10px; border-radius: 20px;
+          background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25);
+          font-size: 0.75rem; font-weight: 600; color: var(--ocean);
         }
+        .selected-user-chip button {
+          background: none; border: none; color: var(--ocean);
+          cursor: pointer; padding: 0; font-size: 0.75rem; line-height: 1;
+          opacity: 0.7; transition: opacity 0.15s;
+        }
+        .selected-user-chip button:hover { opacity: 1; }
       `}</style>
 
       <div className="adm-root">
         <div className="adm-content">
 
+          {/* HEADER */}
           <header className="adm-header">
             <div>
               <p className="adm-eyebrow">SummerSeason Platform</p>
@@ -232,6 +243,7 @@ function AdminPage() {
 
           {error && <div className="adm-alert"><span>⚠️</span> {error}</div>}
 
+          {/* PROPOSTE ARBITRI */}
           <div
             className="adm-card"
             style={{ marginBottom: 24, cursor: "pointer", borderColor: unreadCount > 0 ? "rgba(245,158,11,0.25)" : undefined }}
@@ -242,18 +254,12 @@ function AdminPage() {
                 <div className="adm-card-icon" style={unreadCount > 0 ? { background: "rgba(245,158,11,0.15)", borderColor: "rgba(245,158,11,0.3)" } : {}}>🔔</div>
                 <div>
                   <h2 className="adm-card-title">Proposte modifiche da arbitri</h2>
-                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
-                    Clicca per vedere tutte le proposte
-                  </p>
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>Clicca per vedere tutte le proposte</p>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {unreadCount > 0 && (
-                  <span style={{
-                    background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)",
-                    color: "var(--warning)", fontSize: "0.68rem", fontWeight: 800,
-                    padding: "3px 10px", borderRadius: 20
-                  }}>
+                  <span style={{ background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "var(--warning)", fontSize: "0.68rem", fontWeight: 800, padding: "3px 10px", borderRadius: 20 }}>
                     {unreadCount} nuove
                   </span>
                 )}
@@ -262,6 +268,7 @@ function AdminPage() {
             </div>
           </div>
 
+          {/* RICHIESTE PUNTI */}
           <div
             className="adm-card"
             style={{ marginBottom: 24, cursor: "pointer" }}
@@ -272,9 +279,7 @@ function AdminPage() {
                 <div className="adm-card-icon">⏳</div>
                 <div>
                   <h2 className="adm-card-title">Richieste punti in attesa</h2>
-                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>
-                    Clicca per vedere e gestire tutte le richieste
-                  </p>
+                  <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>Clicca per vedere e gestire tutte le richieste</p>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -284,6 +289,7 @@ function AdminPage() {
             </div>
           </div>
 
+          {/* STATS */}
           <div className="adm-stats">
             <div className="adm-stat-card">
               <div><p className="adm-stat-label">Utenti registrati</p><p className="adm-stat-value">{users.length}</p></div>
@@ -296,8 +302,11 @@ function AdminPage() {
           </div>
 
           <div className="adm-grid">
+
+            {/* COLONNA SINISTRA */}
             <div className="adm-col">
 
+              {/* CREA UTENTE */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">✏️</div>
@@ -308,36 +317,25 @@ function AdminPage() {
                     <div className="adm-form-grid">
                       <div className="adm-field">
                         <label className="adm-field-label">Nome</label>
-                        <input className="adm-input" placeholder="Mario" value={userForm.name}
-                          onChange={e => setUserForm({ ...userForm, name: e.target.value })} required />
+                        <input className="adm-input" placeholder="Mario" value={userForm.name} onChange={e => setUserForm({ ...userForm, name: e.target.value })} required />
                       </div>
                       <div className="adm-field">
                         <label className="adm-field-label">Cognome</label>
-                        <input className="adm-input" placeholder="Rossi" value={userForm.surname}
-                          onChange={e => setUserForm({ ...userForm, surname: e.target.value })} required />
+                        <input className="adm-input" placeholder="Rossi" value={userForm.surname} onChange={e => setUserForm({ ...userForm, surname: e.target.value })} required />
                       </div>
                       <div className="adm-field">
                         <label className="adm-field-label">Username</label>
-                        <input className="adm-input" placeholder="mario.rossi" value={userForm.username}
-                          onChange={e => setUserForm({ ...userForm, username: e.target.value })} required />
+                        <input className="adm-input" placeholder="mario.rossi" value={userForm.username} onChange={e => setUserForm({ ...userForm, username: e.target.value })} required />
                       </div>
                       <div className="adm-field">
                         <label className="adm-field-label">Password</label>
-                        <input type="password" className="adm-input" placeholder="••••••••" value={userForm.password}
-                          onChange={e => setUserForm({ ...userForm, password: e.target.value })} required />
+                        <input type="password" className="adm-input" placeholder="••••••••" value={userForm.password} onChange={e => setUserForm({ ...userForm, password: e.target.value })} required />
                       </div>
                     </div>
                     <div className="adm-field" style={{ marginTop: "4px" }}>
                       <label className="adm-field-label">Ruolo</label>
-                      <select
-                        className="dark-select"
-                        style={{ marginTop: "5px" }}
-                        value={userForm.role}
-                        onChange={e => setUserForm({ ...userForm, role: e.target.value })}
-                      >
-                        {Object.keys(roleMap)
-                          .filter(r => r !== "3")
-                          .map(r => <option key={r} value={r}>{roleMap[r]}</option>)}
+                      <select className="dark-select" style={{ marginTop: "5px" }} value={userForm.role} onChange={e => setUserForm({ ...userForm, role: e.target.value })}>
+                        {Object.keys(roleMap).filter(r => r !== "3").map(r => <option key={r} value={r}>{roleMap[r]}</option>)}
                       </select>
                     </div>
                     <button type="submit" className="adm-btn-submit">Crea utente</button>
@@ -345,6 +343,7 @@ function AdminPage() {
                 </div>
               </div>
 
+              {/* LISTA UTENTI */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">👥</div>
@@ -379,8 +378,10 @@ function AdminPage() {
               </div>
             </div>
 
+            {/* COLONNA DESTRA */}
             <div className="adm-col">
 
+              {/* CREA LEGA */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">🏅</div>
@@ -390,24 +391,66 @@ function AdminPage() {
                   <form onSubmit={handleCreateLeague}>
                     <div className="adm-field" style={{ marginBottom: "16px" }}>
                       <label className="adm-field-label">Nome lega</label>
-                      <input className="adm-input" style={{ marginTop: "5px" }} placeholder="es. Serie A 2025" value={leagueName}
-                        onChange={e => setLeagueName(e.target.value)} required />
+                      <input className="adm-input" style={{ marginTop: "5px" }} placeholder="es. Serie A 2025" value={leagueName} onChange={e => setLeagueName(e.target.value)} required />
                     </div>
+
                     <p className="adm-section-label">Partecipanti</p>
-                    <div className="adm-participants">
-                      {participants.map(u => (
-                        <label key={u.id} className={`adm-participant-item ${selectedUsers.includes(u.id) ? "selected" : ""}`}
-                          onClick={() => handleSelectUser(u.id)}>
-                          <input type="checkbox" readOnly checked={selectedUsers.includes(u.id)} />
-                          <span className="adm-participant-label">{u.name} {u.surname}</span>
-                        </label>
-                      ))}
+
+                    {/* Ricerca */}
+                    <div className="user-search-wrap" ref={searchRef} style={{ marginBottom: 10 }}>
+                      <input
+                        className="adm-input"
+                        placeholder="Cerca per username o nome..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                        autoComplete="off"
+                      />
+                      {showDropdown && (
+                        <div className="user-search-dropdown" ref={dropdownRef}>
+                          {searchResults.map(u => (
+                            <div
+                              key={u.id}
+                              className="user-search-item"
+                              onMouseDown={() => {
+                                setSelectedUsers(prev => [...prev, u.id]);
+                                setSearchQuery("");
+                                setShowDropdown(false);
+                              }}
+                            >
+                              <div className="user-search-avatar">{(u.name[0] ?? "?").toUpperCase()}</div>
+                              <div>
+                                <div style={{ fontWeight: 600, color: "var(--text)" }}>{u.name} {u.surname}</div>
+                                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>@{u.userName}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Chip selezionati */}
+                    {selectedUsers.length > 0 && (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                        {selectedUsers.map(uid => {
+                          const u = participants.find(p => p.id === uid);
+                          if (!u) return null;
+                          return (
+                            <div key={uid} className="selected-user-chip">
+                              {u.name} {u.surname}
+                              <button type="button" onClick={() => setSelectedUsers(prev => prev.filter(id => id !== uid))}>✕</button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <button type="submit" className="adm-btn-submit">Crea lega</button>
                   </form>
                 </div>
               </div>
 
+              {/* LISTA LEGHE */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">🗂️</div>
@@ -438,6 +481,7 @@ function AdminPage() {
                   </table>
                 </div>
               </div>
+
             </div>
           </div>
         </div>

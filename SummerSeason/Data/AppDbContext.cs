@@ -19,6 +19,7 @@ namespace SummerSeason.data
         public DbSet<PointRequest> PointRequests { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<LeagueReferee> LeagueReferees { get; set; }
+        public DbSet<Chat> Chat { get; set; }
 
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
@@ -31,7 +32,23 @@ namespace SummerSeason.data
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<LeagueReferee>()
             .HasKey(lr => new { lr.LeagueId, lr.UserId });
+            
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.Sender)
+                .WithMany()
+                .HasForeignKey(c => c.SenderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<Chat>()
+                .HasOne(c => c.League)
+                .WithMany()
+                .HasForeignKey(c => c.LeagueId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Chat>()
+                .Property(c => c.Type)
+                .HasConversion<string>();
+           
             modelBuilder.Entity<LeagueReferee>()
                 .HasOne(lr => lr.League)
                 .WithMany(l => l.LeagueReferees)
