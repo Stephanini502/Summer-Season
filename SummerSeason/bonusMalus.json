@@ -29,6 +29,12 @@
       "description": "La sfida la porti a termine con un aborto (a discrezione dell'arbitro)",
       "points": 15,
       "type": "Malus"  
+    },
+    {
+      "name": "Aborto22",
+      "description": "La sfida la porti a termine con un aborto (a discrezione dell'arbitro)",
+      "points": 15,
+      "type": "Malus"  
     }
   ]
 }

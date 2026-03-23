@@ -138,7 +138,7 @@ function ChallengesAdminPage() {
 
           <header className="pg-header">
             <div>
-              <p className="pg-eyebrow">SummerSeason Platform</p>
+              <p className="pg-eyebrow">SummerSeason</p>
               <h1 className="pg-title">Gestione Sfide</h1>
             </div>
           </header>

@@ -8,24 +8,45 @@ function LeagueDataPage() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [league, setLeague] = useState(null);
+  const [league, setLeague]           = useState(null);
   const [participants, setParticipants] = useState([]);
-  const [challenges, setChallenges] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [challenges, setChallenges]   = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
   const [uploadingFor, setUploadingFor] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
   const fileInputRef = useRef();
-  const [lightbox, setLightbox] = useState(null);
+  const [lightbox, setLightbox]       = useState(null);
 
-  const token = localStorage.getItem("jwtToken");
+  // Stato form aggiungi sfida (arbitro)
+  const [showChallengeForm, setShowChallengeForm] = useState(false);
+  const [challengeForm, setChallengeForm]         = useState({ name: "", description: "", points: "" });
+  const [creatingChallenge, setCreatingChallenge] = useState(false);
+  const [challengeError, setChallengeError]       = useState("");
+  const [challengeSuccess, setChallengeSuccess]   = useState("");
+
+  const token   = localStorage.getItem("jwtToken");
+  const userId  = parseInt(localStorage.getItem("userId"));
   const headers = { Authorization: `Bearer ${token}` };
 
-  const normalizeValues = (d) => { if (!d) return []; if (Array.isArray(d)) return d; if (d.$values) return d.$values; return [d]; };
-  const normalizeMedia  = (m) => ({ id: m.id??m.Id, url: m.url??m.Url??"", type: (m.type??m.Type??"image").toLowerCase() });
-  const normalizeUser   = (u) => ({ id: u.id??u.Id, name: u.name??u.Name??"", surname: u.surname??u.Surname??"", userName: u.userName??u.UserName??"", totalPoints: u.totalPoints??u.TotalPoints??0 });
+  // Leggi il ruolo dal token JWT
+  const getRolesFromToken = () => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const roleKey = Object.keys(payload).find(k => k.toLowerCase().includes("role"));
+      const roles   = payload[roleKey];
+      return Array.isArray(roles) ? roles : [roles];
+    } catch { return []; }
+  };
+  const userRoles  = getRolesFromToken();
+  const isReferee  = userRoles.includes("Referee") || userRoles.includes("1");
+  const isAdmin    = userRoles.includes("Admin")    || userRoles.includes("0");
+
+  const normalizeValues    = (d) => { if (!d) return []; if (Array.isArray(d)) return d; if (d.$values) return d.$values; return [d]; };
+  const normalizeMedia     = (m) => ({ id: m.id??m.Id, url: m.url??m.Url??"", type: (m.type??m.Type??"image").toLowerCase() });
+  const normalizeUser      = (u) => ({ id: u.id??u.Id, name: u.name??u.Name??"", surname: u.surname??u.Surname??"", userName: u.userName??u.UserName??"", totalPoints: u.totalPoints??u.TotalPoints??0 });
   const normalizeChallenge = (c) => ({ id: c.id??c.Id, name: c.name??c.Name??"", description: c.description??c.Description??"", points: c.points??c.Points??0, media: normalizeValues(c.media??c.Media).map(normalizeMedia) });
-  const normalizeLeague = (l) => ({ ...l, media: normalizeValues(l.media??l.Media).map(normalizeMedia) });
+  const normalizeLeague    = (l) => ({ ...l, media: normalizeValues(l.media??l.Media).map(normalizeMedia) });
 
   const fetchLeagueData = async () => {
     setLoading(true); setError("");
@@ -45,10 +66,7 @@ function LeagueDataPage() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    fetchLeagueData();
-  }, [id]);
+  useEffect(() => { window.scrollTo(0, 0); fetchLeagueData(); }, [id]);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -96,13 +114,38 @@ function LeagueDataPage() {
     finally { setUploadProgress(null); setUploadingFor(null); }
   };
 
+  const handleCreateChallenge = async (e) => {
+    e.preventDefault();
+    setChallengeError(""); setChallengeSuccess("");
+    if (!challengeForm.name.trim()) return;
+    setCreatingChallenge(true);
+    try {
+      const res = await fetch("http://localhost:5247/api/challenges", {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          Name:        challengeForm.name.trim(),
+          Description: challengeForm.description.trim(),
+          Points:      parseInt(challengeForm.points) || 0,
+          LeagueIds:   [parseInt(id)]
+        })
+      });
+      if (!res.ok) throw new Error("Errore creazione sfida");
+      setChallengeSuccess("✓ Sfida aggiunta con successo!");
+      setChallengeForm({ name: "", description: "", points: "" });
+      setShowChallengeForm(false);
+      await fetchLeagueData();
+    } catch (err) { setChallengeError(err.message); }
+    finally { setCreatingChallenge(false); }
+  };
+
   if (loading) return (<><style>{sharedStyles}{mediaStyles}</style><div className="pg-root"><div className="pg-loading"><div className="pg-spinner"/></div></div></>);
   if (error)   return (<><style>{sharedStyles}{mediaStyles}</style><div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div></>);
   if (!league) return (<><style>{sharedStyles}{mediaStyles}</style><div className="pg-root"><div className="pg-empty">Lega non trovata</div></div></>);
 
-  const topPlayer = participants[0] ?? null;
-  const totalPts  = challenges.reduce((s,c) => s + (c.points||0), 0);
-  const rankClass = (i) => i===0?"pg-rank pg-rank-1":i===1?"pg-rank pg-rank-2":i===2?"pg-rank pg-rank-3":"pg-rank";
+  const topPlayer    = participants[0] ?? null;
+  const totalPts     = challenges.reduce((s,c) => s + (c.points||0), 0);
+  const rankClass    = (i) => i===0?"pg-rank pg-rank-1":i===1?"pg-rank pg-rank-2":i===2?"pg-rank pg-rank-3":"pg-rank";
   const leagueImages = (league.media||[]).filter(m => m.type==="image");
   const leagueVideos = (league.media||[]).filter(m => m.type==="video");
 
@@ -151,8 +194,89 @@ function LeagueDataPage() {
             )}
           </div>
 
+          {/* SEZIONE ARBITRO — aggiungi sfida */}
+          {(isReferee || isAdmin) && (
+            <div className="pg-card" style={{ marginBottom: 0, borderColor: showChallengeForm ? "rgba(245,158,11,0.3)" : undefined }}>
+              <div className="pg-card-header" style={{ justifyContent: "space-between" }}>
+                <div className="pg-card-header-left">
+                  <div className="pg-card-icon" style={{ background: "rgba(245,158,11,0.15)", borderColor: "rgba(245,158,11,0.3)" }}>⚖️</div>
+                  <div>
+                    <h2 className="pg-card-title">Area arbitro</h2>
+                    <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: 2 }}>Aggiungi una nuova sfida a questa lega</p>
+                  </div>
+                </div>
+                <button
+                  className="pg-btn-hero"
+                  style={{ fontSize: "0.78rem", padding: "8px 16px", background: showChallengeForm ? "rgba(248,113,113,0.15)" : "rgba(245,158,11,0.15)", color: showChallengeForm ? "var(--danger)" : "var(--warning)", border: `1px solid ${showChallengeForm ? "rgba(248,113,113,0.3)" : "rgba(245,158,11,0.3)"}`, boxShadow: "none" }}
+                  onClick={() => { setShowChallengeForm(p => !p); setChallengeError(""); setChallengeSuccess(""); }}
+                >
+                  {showChallengeForm ? "✕ Annulla" : "+ Aggiungi sfida"}
+                </button>
+              </div>
+
+              {challengeSuccess && !showChallengeForm && (
+                <div style={{ padding: "10px 24px", fontSize: "0.82rem", color: "var(--success)", borderTop: "1px solid var(--border)" }}>
+                  {challengeSuccess}
+                </div>
+              )}
+
+              {showChallengeForm && (
+                <div style={{ padding: "20px 24px", borderTop: "1px solid var(--border)" }}>
+                  <form onSubmit={handleCreateChallenge}>
+                    <div className="pg-grid-2" style={{ gap: 16, marginBottom: 16 }}>
+                      <div className="pg-field" style={{ marginBottom: 0 }}>
+                        <label className="pg-field-label">Nome sfida</label>
+                        <input
+                          className="pg-input"
+                          placeholder="Es. Foto al tramonto"
+                          value={challengeForm.name}
+                          onChange={e => setChallengeForm(p => ({ ...p, name: e.target.value }))}
+                          required
+                        />
+                      </div>
+                      <div className="pg-field" style={{ marginBottom: 0 }}>
+                        <label className="pg-field-label">Punti</label>
+                        <input
+                          className="pg-input"
+                          type="number"
+                          placeholder="Es. 50"
+                          min="0"
+                          value={challengeForm.points}
+                          onChange={e => setChallengeForm(p => ({ ...p, points: e.target.value }))}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="pg-field">
+                      <label className="pg-field-label">Descrizione</label>
+                      <textarea
+                        className="pg-input"
+                        placeholder="Descrivi la sfida..."
+                        rows={3}
+                        style={{ resize: "vertical", minHeight: 80 }}
+                        value={challengeForm.description}
+                        onChange={e => setChallengeForm(p => ({ ...p, description: e.target.value }))}
+                      />
+                    </div>
+                    {challengeError && (
+                      <div style={{ fontSize: "0.82rem", color: "var(--danger)", marginBottom: 12 }}>⚠️ {challengeError}</div>
+                    )}
+                    <button
+                      type="submit"
+                      className="pg-btn-hero"
+                      style={{ minWidth: 180, opacity: creatingChallenge ? 0.6 : 1 }}
+                      disabled={creatingChallenge || !challengeForm.name.trim() || !challengeForm.points}
+                    >
+                      {creatingChallenge ? "⏳ Creazione..." : "🏁 Crea sfida"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* CLASSIFICA + SFIDE */}
-          <div className="pg-grid-2">
+          <div className="pg-grid-2" style={{ marginTop: 20 }}>
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left"><div className="pg-card-icon">👥</div><h2 className="pg-card-title">Classifica partecipanti</h2></div>
@@ -221,7 +345,6 @@ function LeagueDataPage() {
 
           {/* CHAT + MEDIA */}
           <div className="pg-grid-2" style={{ marginTop: 20 }}>
-
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -277,7 +400,6 @@ function LeagueDataPage() {
                 </div>
               </div>
             </div>
-
           </div>
 
         </div>

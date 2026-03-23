@@ -3,7 +3,6 @@ import { useEffect, useState, useRef } from "react";
 import { sharedStyles } from "../style/SharedStyles";
 import { mediaStyles } from "../style/SharedStyles";
 
-// 0=Admin, 1=Referee, 2=LeagueAdmin, 3=Participant, 4=Guest
 const ADMIN_ROLE   = 0;
 const REFEREE_ROLE = 1;
 
@@ -12,10 +11,10 @@ function LeagueDataAdminPage() {
   const navigate = useNavigate();
 
   const [league, setLeague]                           = useState(null);
-  const [participants, setParticipants]               = useState([]); // classifica (no admin/arbitri)
-  const [referees, setReferees]                       = useState([]); // arbitri della lega
-  const [allUsers, setAllUsers]                       = useState([]); // utenti aggiungibili come partecipanti
-  const [allEligibleReferees, setAllEligibleReferees] = useState([]); // utenti assegnabili come arbitri
+  const [participants, setParticipants]               = useState([]); 
+  const [referees, setReferees]                       = useState([]); 
+  const [allUsers, setAllUsers]                       = useState([]); 
+  const [allEligibleReferees, setAllEligibleReferees] = useState([]); 
   const [selectedUserId, setSelectedUserId]           = useState("");
   const [selectedRefereeId, setSelectedRefereeId]     = useState("");
   const [challenges, setChallenges]                   = useState([]);

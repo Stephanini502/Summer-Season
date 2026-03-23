@@ -12,8 +12,9 @@ using SummerSeason.Hubs;
 var builder = WebApplication.CreateBuilder(args);
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-var key = "SuMmEr_SeAsOn_0000_SECRET_KEY_0000";
-
+var key = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("JWT Secret non configurato");
+    
 var cloudinarySettings = builder.Configuration.GetSection("Cloudinary");
 var account = new Account(
     cloudinarySettings["CloudName"],    

@@ -206,10 +206,9 @@ function RefereePage() {
       <div className="adm-root">
         <div className="adm-content">
 
-          {/* HEADER */}
           <header className="adm-header">
             <div>
-              <p className="adm-eyebrow">SummerSeason Platform</p>
+              <p className="adm-eyebrow">SummerSeason</p>
               <h1 className="adm-title">Referee Dashboard</h1>
             </div>
             <button className="adm-btn-primary" onClick={() => navigate("/challenges")}>

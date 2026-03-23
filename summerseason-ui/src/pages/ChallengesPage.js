@@ -291,7 +291,7 @@ function ChallengesPage() {
 
           <div className="challenges-hero">
             <div>
-              <p className="pg-eyebrow">SummerSeason Platform</p>
+              <p className="pg-eyebrow">SummerSeason</p>
               <h1 style={{fontFamily:"'Outfit',sans-serif",fontSize:"2rem",fontWeight:900,color:"#eef2ff",letterSpacing:"-0.03em",lineHeight:1.1,margin:"6px 0 4px"}}>
                 Le tue sfide
               </h1>

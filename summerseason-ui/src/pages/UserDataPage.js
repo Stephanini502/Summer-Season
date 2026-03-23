@@ -17,6 +17,7 @@ function UserDataPage() {
   const [leagues, setLeagues]           = useState([]);
   const [rankings, setRankings]         = useState({});
   const [weeklyPoints, setWeeklyPoints] = useState(0);
+  const [globalRanking, setGlobalRanking] = useState([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState("");
   const [avatarUrl, setAvatarUrl]       = useState(null);
@@ -36,8 +37,6 @@ function UserDataPage() {
   const dropdownRef  = useRef();
   const navigate     = useNavigate();
 
-  const totalPoints = user?.totalPoints ?? user?.TotalPoints ?? 0;
-
   const normalizeDatas = (data) => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
@@ -48,7 +47,7 @@ function UserDataPage() {
     name: u.name || u.Name,
     surname: u.surname || u.Surname,
     userName: u.userName || u.UserName,
-    totalPoints: parseInt(u.totalPoints ?? u.TotalPoints ?? 0)  
+    totalPoints: parseInt(u.totalPoints ?? u.TotalPoints ?? 0)
   });
   const safeJson = async (res) => {
     if (!res.ok) throw new Error(`Errore API (${res.status})`);
@@ -68,14 +67,27 @@ function UserDataPage() {
       fetch(`http://localhost:5247/api/users/${userId}/roles`, { headers }).then(safeJson),
       fetch(`http://localhost:5247/api/leagues/user/${userId}`, { headers }).then(safeJson),
       fetch(`http://localhost:5247/api/results/weeklyResults/${userId}`, { headers }).then(safeJson),
+      fetch(`http://localhost:5247/api/users`, { headers }).then(safeJson),
     ])
-      .then(async ([userData, rolesData, leaguesData, weeklyData]) => {
+      .then(async ([userData, rolesData, leaguesData, weeklyData, allUsersData]) => {
         const normalizedLeagues = normalizeDatas(leaguesData);
         setUser(userData);
         setAvatarUrl(userData?.avatarUrl ?? userData?.AvatarUrl ?? null);
         setRoles(normalizeDatas(rolesData));
         setLeagues(normalizedLeagues);
         setWeeklyPoints(weeklyData ?? 0);
+
+        const allUsers = normalizeDatas(allUsersData)
+          .map(u => ({
+            id: u.id ?? u.Id,
+            name: u.name ?? u.Name ?? "",
+            surname: u.surname ?? u.Surname ?? "",
+            userName: u.userName ?? u.UserName ?? "",
+            totalPoints: parseInt(u.totalPoints ?? u.TotalPoints ?? 0)
+          }))
+          .sort((a, b) => b.totalPoints - a.totalPoints);
+        setGlobalRanking(allUsers);
+
         const rankingMap = {};
         if (normalizedLeagues.length > 0) {
           await Promise.all(normalizedLeagues.map(async (league) => {
@@ -90,7 +102,6 @@ function UserDataPage() {
       .finally(() => setLoading(false));
   }, [userId]);
 
-  // Ricerca utenti con debounce
   useEffect(() => {
     if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
     const timeout = setTimeout(async () => {
@@ -122,7 +133,6 @@ function UserDataPage() {
     return () => clearTimeout(timeout);
   }, [searchQuery, selectedUsers]);
 
-  // Chiudi dropdown cliccando fuori
   useEffect(() => {
     const handleClick = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
@@ -194,7 +204,9 @@ function UserDataPage() {
   if (error)   return (<><style>{sharedStyles}{userPageStyles}</style><div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div></>);
   if (!user)   return (<><style>{sharedStyles}{userPageStyles}</style><div className="pg-root"><div className="pg-empty">Utente non trovato</div></div></>);
 
-  const initials = `${(user.name || "?")[0]}${(user.surname || "?")[0]}`.toUpperCase();
+  const initials    = `${(user.name || "?")[0]}${(user.surname || "?")[0]}`.toUpperCase();
+  const totalPoints = user?.totalPoints ?? user?.TotalPoints ?? 0;
+  const rankClass   = (i) => i===0?"pg-rank pg-rank-1":i===1?"pg-rank pg-rank-2":i===2?"pg-rank pg-rank-3":"pg-rank";
 
   return (
     <>
@@ -206,17 +218,22 @@ function UserDataPage() {
       <div className="pg-root">
         <div className="pg-content">
 
-          <header className="pg-header">
-            <div>
-              <p className="pg-eyebrow">SummerSeason Platform</p>
-              <h1 className="pg-title">Profilo Utente</h1>
-            </div>
-            <button className="pg-btn pg-btn-primary" onClick={() => navigate("/challenges")}>
-              🏁 Vai alle sfide
-            </button>
-          </header>
+      <header className="pg-header">
+        <div>
+          <p className="pg-eyebrow">SummerSeason</p>
+          <h1 className="pg-title">Profilo Utente</h1>
+        </div>
+        <div style={{ display:"flex", gap:10 }}>
+          <button className="pg-btn pg-btn-ghost" onClick={() => navigate("/ranking")}>
+            🌍 Classifica globale
+          </button>
+          <button className="pg-btn pg-btn-primary" onClick={() => navigate("/challenges")}>
+            🏁 Vai alle sfide
+          </button>
+        </div>
+      </header>
 
-          {/* ── FORM CREA LEGA a tutta larghezza ── */}
+          {/* FORM CREA LEGA */}
           {isOwnProfile && showCreateLeague && (
             <div className="pg-card" style={{ marginBottom: 20 }}>
               <div className="pg-card-header" style={{ justifyContent: "space-between" }}>
@@ -233,13 +250,7 @@ function UserDataPage() {
                   <div className="pg-grid-2" style={{ gap: 20, marginBottom: 16 }}>
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Nome lega</label>
-                      <input
-                        className="pg-input"
-                        placeholder="Es. Estate 2026"
-                        value={leagueName}
-                        onChange={e => setLeagueName(e.target.value)}
-                        required
-                      />
+                      <input className="pg-input" placeholder="Es. Estate 2026" value={leagueName} onChange={e => setLeagueName(e.target.value)} required />
                     </div>
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Cerca partecipanti</label>
@@ -288,12 +299,7 @@ function UserDataPage() {
                     </div>
                   )}
 
-                  <button
-                    type="submit"
-                    className="pg-btn pg-btn-sun"
-                    style={{ minWidth: 200 }}
-                    disabled={creatingLeague || !leagueName.trim()}
-                  >
+                  <button type="submit" className="pg-btn pg-btn-sun" style={{ minWidth: 200 }} disabled={creatingLeague || !leagueName.trim()}>
                     {creatingLeague ? "⏳ Creazione..." : "🏅 Crea lega"}
                   </button>
                 </form>
@@ -301,18 +307,14 @@ function UserDataPage() {
             </div>
           )}
 
+          {/* GRIGLIA PROFILO */}
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
 
-            {/* COLONNA SINISTRA */}
             <div className="pg-col" style={{ gap: 20 }}>
 
-              {/* PROFILO */}
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
-                  <div className="pg-card-header-left">
-                    <div className="pg-card-icon">👤</div>
-                    <h2 className="pg-card-title">Profilo</h2>
-                  </div>
+                  <div className="pg-card-header-left"><div className="pg-card-icon">👤</div><h2 className="pg-card-title">Profilo</h2></div>
                 </div>
                 <div style={{ padding: "24px", textAlign: "center" }}>
                   <div className="avatar-wrap" onClick={handleAvatarClick} title={isOwnProfile ? "Clicca per cambiare foto" : ""} style={{ cursor: isOwnProfile ? "pointer" : "default" }}>
@@ -331,20 +333,17 @@ function UserDataPage() {
 
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
-                  <div className="pg-card-header-left">
-                    <div className="pg-card-icon">📊</div>
-                    <h2 className="pg-card-title">Statistiche</h2>
-                  </div>
+                  <div className="pg-card-header-left"><div className="pg-card-icon">📊</div><h2 className="pg-card-title">Statistiche</h2></div>
                 </div>
                 <div style={{ padding: "16px 24px" }}>
                   <div className="pg-info-row">
                     <span className="pg-info-row-label">Leghe</span>
                     <span className="pg-info-row-value" style={{ color: "var(--ocean)", fontSize: "1.3rem", fontWeight: 800 }}>{leagues.length}</span>
                   </div>
-                    <div className="pg-info-row">
-                      <span className="pg-info-row-label">Punti totali</span>
-                      <span className="pg-info-row-value" style={{ color: "var(--sun)", fontSize: "1.3rem", fontWeight: 800 }}>{totalPoints}</span>
-                    </div>
+                  <div className="pg-info-row">
+                    <span className="pg-info-row-label">Punti totali</span>
+                    <span className="pg-info-row-value" style={{ color: "var(--sun)", fontSize: "1.3rem", fontWeight: 800 }}>{totalPoints}</span>
+                  </div>
                   <div className="pg-info-row">
                     <span className="pg-info-row-label">Punti questa settimana</span>
                     <span className="pg-info-row-value" style={{ color: "var(--success)", fontSize: "1.3rem", fontWeight: 800 }}>{weeklyPoints}</span>
@@ -352,14 +351,10 @@ function UserDataPage() {
                 </div>
               </div>
 
-              {/* BOTTONE CREA LEGA */}
               {isOwnProfile && (
                 <div className="pg-card" style={{ marginBottom: 0 }}>
                   <div className="pg-card-header">
-                    <div className="pg-card-header-left">
-                      <div className="pg-card-icon">🏅</div>
-                      <h2 className="pg-card-title">Crea una lega</h2>
-                    </div>
+                    <div className="pg-card-header-left"><div className="pg-card-icon">🏅</div><h2 className="pg-card-title">Crea una lega</h2></div>
                   </div>
                   <div style={{ padding: "16px 24px" }}>
                     <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
@@ -368,10 +363,7 @@ function UserDataPage() {
                     <button
                       className="pg-btn pg-btn-sun"
                       style={{ width: "100%" }}
-                      onClick={() => {
-                        setShowCreateLeague(p => !p);
-                        if (!showCreateLeague) window.scrollTo({ top: 0, behavior: "smooth" });
-                      }}
+                      onClick={() => { setShowCreateLeague(p => !p); if (!showCreateLeague) window.scrollTo({ top: 0, behavior: "smooth" }); }}
                     >
                       {showCreateLeague ? "✕ Annulla" : "🏅 Crea nuova lega"}
                     </button>
@@ -381,14 +373,10 @@ function UserDataPage() {
 
             </div>
 
-            {/* COLONNA DESTRA */}
             <div className="pg-col" style={{ gap: 0 }}>
               <div className="pg-card" style={{ marginBottom: 0 }}>
                 <div className="pg-card-header">
-                  <div className="pg-card-header-left">
-                    <div className="pg-card-icon">🏆</div>
-                    <h2 className="pg-card-title">Le mie leghe</h2>
-                  </div>
+                  <div className="pg-card-header-left"><div className="pg-card-icon">🏆</div><h2 className="pg-card-title">Le mie leghe</h2></div>
                   {leagues.length > 0 && <span className="pg-badge pg-badge-sun">{leagues.length} leghe</span>}
                 </div>
 
@@ -439,15 +427,14 @@ function UserDataPage() {
                           {ranking.length > 0 && (
                             <div style={{ padding:"0 24px 14px", display:"flex", gap:8, flexWrap:"wrap" }}>
                               {ranking.slice(0, 3).map((u, idx) => {
-                                const isMe   = (u.userName||"").toLowerCase() === (user.userName||"").toLowerCase();
+                                const isMe = (u.userName||"").toLowerCase() === (user.userName||"").toLowerCase();
                                 const medals = ["🥇","🥈","🥉"];
                                 return (
                                   <div key={idx} style={{
                                     display:"flex", alignItems:"center", gap:6, padding:"5px 12px",
                                     background: isMe ? "rgba(251,191,36,0.1)" : "rgba(255,255,255,0.03)",
                                     border: `1px solid ${isMe ? "rgba(251,191,36,0.3)" : "rgba(255,255,255,0.07)"}`,
-                                    borderRadius:20, fontSize:"0.74rem",
-                                    fontWeight: isMe ? 700 : 500, color:"var(--text)"
+                                    borderRadius:20, fontSize:"0.74rem", fontWeight: isMe ? 700 : 500, color:"var(--text)"
                                   }}>
                                     <span>{medals[idx]}</span>
                                     <span>{u.name} {u.surname}</span>
@@ -469,7 +456,6 @@ function UserDataPage() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </div>

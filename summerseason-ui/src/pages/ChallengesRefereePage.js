@@ -144,7 +144,7 @@ function ChallengesRefereePage() {
 
           <header className="pg-header">
             <div>
-              <p className="pg-eyebrow">SummerSeason Platform</p>
+              <p className="pg-eyebrow">SummerSeason</p>
               <h1 className="pg-title">Sfide — Vista Arbitro</h1>
             </div>
           </header>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-
+import GlobalRankingPage from "./pages/GlobalRankingPage";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import LoginPage from "./pages/LoginPage";
@@ -118,6 +118,7 @@ function App() {
           <Route path="/referee" element={isLoggedIn && isReferee ? <RefereePage /> : <Navigate to="/login" replace />} />
           <Route path="/challenges"element={isAdmin? <ChallengesAdminPage />: isReferee? <ChallengesRefereePage />: <ChallengesPage />}/>
           <Route path="/admin/proposals" element={isLoggedIn && isAdmin ? <RefereeProposalsPage /> : <Navigate to="/login" replace />} />
+          <Route path="/ranking" element={isLoggedIn ? <GlobalRankingPage /> : <Navigate to="/login" replace />} />
         </Routes>
       </div>
 

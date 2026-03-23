@@ -233,7 +233,7 @@ function AdminPage() {
           {/* HEADER */}
           <header className="adm-header">
             <div>
-              <p className="adm-eyebrow">SummerSeason Platform</p>
+              <p className="adm-eyebrow">SummerSeason</p>
               <h1 className="adm-title">Admin Dashboard</h1>
             </div>
             <button className="adm-btn-primary" onClick={() => navigate("/challenges")}>
