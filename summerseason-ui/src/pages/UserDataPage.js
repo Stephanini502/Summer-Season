@@ -301,7 +301,6 @@ function UserDataPage() {
             </div>
           </header>
 
-          {/* FORM CREA LEGA */}
           {isOwnProfile && showCreateLeague && (
             <div className="pg-card" style={{ marginBottom: 20 }}>
               <div className="pg-card-header" style={{ justifyContent: "space-between" }}>
@@ -317,7 +316,6 @@ function UserDataPage() {
                 <form onSubmit={handleCreateLeague}>
                   <div className="pg-grid-2" style={{ gap: 20, marginBottom: 16 }}>
 
-                    {/* Nome lega */}
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Nome lega</label>
                       <input
@@ -329,7 +327,6 @@ function UserDataPage() {
                       />
                     </div>
 
-                    {/* Ricerca partecipanti */}
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Cerca partecipanti</label>
                       <div className="league-search-wrap">
@@ -349,14 +346,13 @@ function UserDataPage() {
                           <div
                             className="league-search-dropdown"
                             ref={dropdownRef}
-                            /* Rimosso lo stile inline con dropdownPos */
                           >
                             {searchResults.map(u => (
                               <div 
                                 key={u.id} 
                                 className="league-search-item" 
                                 onMouseDown={(e) => {
-                                  e.preventDefault(); // Impedisce la chiusura immediata su alcuni browser
+                                  e.preventDefault(); 
                                   addUser(u);
                                 }}
                               >
@@ -373,7 +369,6 @@ function UserDataPage() {
                     </div>
                   </div>
 
-                  {/* Chips partecipanti selezionati */}
                   {(selectedUsers.length > 0) && (
                     <div style={{ marginBottom: 16 }}>
                       <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
@@ -414,7 +409,6 @@ function UserDataPage() {
             </div>
           )}
 
-          {/* GRIGLIA PROFILO */}
           <div className="pg-grid-sidebar" style={{ alignItems: "start" }}>
 
             <div className="pg-col" style={{ gap: 20 }}>

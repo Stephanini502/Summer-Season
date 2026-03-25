@@ -216,14 +216,12 @@ function RefereePage() {
             </button>
           </header>
 
-          {/* MESSAGE */}
           {message && (
             <div className={`adm-alert ${message.type === "success" ? "adm-alert-success" : ""}`}>
               <span>{message.type === "error" ? "⚠️" : "✓"}</span> {message.text}
             </div>
           )}
 
-          {/* STATS */}
           <div className="adm-stats">
             <div className="adm-stat-card">
               <div>
@@ -245,7 +243,6 @@ function RefereePage() {
 
           <div className="adm-grid">
 
-            {/* LEFT: RICHIESTE */}
             <div className="adm-col">
               <div className="adm-card">
                 <div className="adm-card-header">
@@ -337,10 +334,8 @@ function RefereePage() {
               </div>
             </div>
 
-            {/* RIGHT */}
             <div className="adm-col" style={{ gap: 20 }}>
 
-              {/* LEGHE */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">🏆</div>
@@ -379,7 +374,6 @@ function RefereePage() {
                 )}
               </div>
 
-              {/* INFO RUOLO */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">⚖️</div>

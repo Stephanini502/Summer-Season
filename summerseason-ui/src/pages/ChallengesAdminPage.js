@@ -162,7 +162,6 @@ function ChallengesAdminPage() {
             </div>
           </div>
 
-          {/* ── SFIDE ── */}
           <div className="pg-grid-2" style={{ alignItems: "start" }}>
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">

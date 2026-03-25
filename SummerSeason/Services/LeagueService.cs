@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using SummerSeason.Dtos;
 using SummerSeason.Enums;
 using SummerSeason.Mappers;
+using Google.Protobuf.WellKnownTypes;
 
 public class LeagueService
 {
@@ -110,11 +111,27 @@ public class LeagueService
 
     public async Task RemoveLeagueByIdAsync(int id)
     {
-        var league = await _context.Leagues.FindAsync(id);
+        var league = await _context.Leagues
+            .Include(l => l.Users)
+            .ThenInclude(u => u.Leagues)
+            .FirstOrDefaultAsync(l => l.Id == id);
+
         if (league == null)
             throw new Exception($"League not found with id: {id}");
 
-        _context.Leagues.Remove(league);
+        league.DeletedAt = DateTime.Now;
+
+        foreach (var user in league.Users)
+        {
+            var hasActiveLeagues = user.Leagues
+                .Any(l => l.DeletedAt == DateTime.MinValue && l.Id != id);
+
+            if (!hasActiveLeagues)
+            {
+                user.Roles.Remove(UserType.Participant);
+            }
+        }
+
         await _context.SaveChangesAsync();
     }
 

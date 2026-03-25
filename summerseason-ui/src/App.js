@@ -111,7 +111,7 @@ function App() {
           <Route path="/login"    element={isLoggedIn ? <Navigate to="/" replace /> : <LoginPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/register" element={isLoggedIn ? <Navigate to="/" replace /> : <SignUpPage onLoginSuccess={handleLoginSuccess} />} />
           <Route path="/"         element={isLoggedIn ? (isAdmin ? <AdminPage />: isReferee? <Navigate to="/referee" replace />: <Navigate to="/profile" replace />): <MainPage />} />
-          <Route path="/profile"  element={isLoggedIn ? <UserDataPage /> : <Navigate to="/login" replace />} />
+          <Route path="/profile"  element={isLoggedIn && isAdmin ? <AdminPage /> : <UserDataPage />} />
           <Route path="/admin"    element={isLoggedIn && isAdmin ? <AdminPage /> : <Navigate to="/login" replace />} />
           <Route path="/user/:id" element={isLoggedIn ? <UserDataPage /> : <MainPage />} />
           <Route path="/league/:id" element={isLoggedIn && isAdmin ? <LeagueDataAdminPage /> : <LeagueDataPage />} />

@@ -347,54 +347,15 @@ function LeagueDataAdminPage() {
           {challenges.length > 0 && (
             <div className="pg-card" style={{ marginBottom: 0 , marginTop: 20}}>
               <div className="pg-card-header">
-                <div className="pg-card-header-left"><div className="pg-card-icon">🏁</div><h2 className="pg-card-title">Media delle sfide</h2></div>
+                <div className="pg-card-header-left"><div className="pg-card-icon">🏁</div><h2 className="pg-card-title">Sfide</h2></div>
                 <span className="pg-badge pg-badge-sun">{challenges.length} sfide</span>
               </div>
               {challenges.map(c => {
-                const cImages = (c.media || []).filter(m => m.type === "image");
-                const cVideos = (c.media || []).filter(m => m.type === "video");
                 return (
                   <div key={c.id} className="challenge-item">
                     <div className="pg-list-item" style={{ borderBottom: "none" }}>
                       <div><div className="pg-list-item-name">{c.name}</div><div className="pg-list-item-sub">{c.description}</div></div>
                       <span className="pg-badge pg-badge-green">+{c.points} pts</span>
-                    </div>
-                    <div className="challenge-media-wrap" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                      <div>
-                        <p className="media-block-title">📷 Immagini ({cImages.length})</p>
-                        {cImages.length > 0 && (
-                          <div className="media-grid" style={{ marginBottom: 8 }}>
-                            {cImages.map((m, idx) => (
-                              <div key={m.id} className="media-item">
-                                <img src={m.url} alt={c.name} className="media-thumb" style={{ maxHeight: 110 }} onClick={() => openLightbox(cImages, idx)} />
-                                <div className="media-item-overlay">
-                                  <button className="media-icon-btn media-icon-btn-view" onClick={() => openLightbox(cImages, idx)}>🔍</button>
-                                  <button className="media-icon-btn media-icon-btn-dl" onClick={() => handleDownload(m.url)}>⬇️</button>
-                                  <button className="media-icon-btn media-icon-btn-del" onClick={() => handleDeleteMedia(m.id, "challenge", c.id)}>🗑️</button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <button className="media-upload-btn" onClick={() => triggerUpload("challenge", c.id, "image")}>📷 {cImages.length > 0 ? "Aggiungi" : "Carica immagine"}</button>
-                      </div>
-                      <div>
-                        <p className="media-block-title">🎬 Video ({cVideos.length})</p>
-                        {cVideos.length > 0 && (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                            {cVideos.map(m => (
-                              <div key={m.id} className="video-wrap media-item" style={{ padding: 4 }}>
-                                <video src={m.url} controls className="media-video" style={{ maxHeight: 130 }} />
-                                <div className="video-actions">
-                                  <button className="video-icon-btn" onClick={() => handleDownload(m.url)} style={{ background: "#3b82f6" }}>⬇️</button>
-                                  <button className="video-icon-btn" onClick={() => handleDeleteMedia(m.id, "challenge", c.id)} style={{ background: "#ef4444" }}>🗑️</button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <button className="media-upload-btn" onClick={() => triggerUpload("challenge", c.id, "video")}>🎬 {cVideos.length > 0 ? "Aggiungi" : "Carica video"}</button>
-                      </div>
                     </div>
                   </div>
                 );

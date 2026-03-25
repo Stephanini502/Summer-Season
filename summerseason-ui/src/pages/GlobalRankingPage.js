@@ -109,7 +109,6 @@ function GlobalRankingPage() {
                     <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                       <span className={rankClass(idx)}>{idx+1}</span>
 
-                      {/* Avatar */}
                       {u.avatarUrl ? (
                         <img src={u.avatarUrl} alt="" style={{ width:36, height:36, borderRadius:"50%", objectFit:"cover", border:"2px solid rgba(251,191,36,0.2)", flexShrink:0 }}/>
                       ) : (

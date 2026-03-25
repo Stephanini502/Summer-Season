@@ -171,7 +171,6 @@ function LeagueDataPage() {
       <div className="pg-root">
         <div className="pg-content">
 
-          {/* HERO */}
           <div className="pg-hero">
             <div>
               <p className="pg-hero-eyebrow">Pagina Lega</p>
@@ -181,7 +180,6 @@ function LeagueDataPage() {
             <button className="pg-btn-hero" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
           </div>
 
-          {/* STATS */}
           <div className="pg-stats">
             <div className="pg-stat-card"><div><p className="pg-stat-label">Partecipanti</p><p className="pg-stat-value">{participants.length}</p></div><div className="pg-stat-icon">👥</div></div>
             <div className="pg-stat-card"><div><p className="pg-stat-label">Sfide</p><p className="pg-stat-value">{challenges.length}</p></div><div className="pg-stat-icon">🏁</div></div>
@@ -194,7 +192,6 @@ function LeagueDataPage() {
             )}
           </div>
 
-          {/* SEZIONE ARBITRO — aggiungi sfida */}
           {(isReferee || isAdmin) && (
             <div className="pg-card" style={{ marginBottom: 0, borderColor: showChallengeForm ? "rgba(245,158,11,0.3)" : undefined }}>
               <div className="pg-card-header" style={{ justifyContent: "space-between" }}>
@@ -275,7 +272,6 @@ function LeagueDataPage() {
             </div>
           )}
 
-          {/* CLASSIFICA + SFIDE */}
           <div className="pg-grid-2" style={{ marginTop: 20 }}>
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">
@@ -343,7 +339,6 @@ function LeagueDataPage() {
             </div>
           </div>
 
-          {/* CHAT + MEDIA */}
           <div className="pg-grid-2" style={{ marginTop: 20 }}>
             <div className="pg-card" style={{marginBottom:0}}>
               <div className="pg-card-header">

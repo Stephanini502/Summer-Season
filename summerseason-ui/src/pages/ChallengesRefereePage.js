@@ -174,10 +174,8 @@ function ChallengesRefereePage() {
             </div>
           </div>
 
-          {/* ── SFIDE ── */}
           <div className="pg-grid-2" style={{ alignItems: "start" }}>
 
-            {/* FORM PROPOSTA */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -236,7 +234,6 @@ function ChallengesRefereePage() {
               </div>
             </div>
 
-            {/* LISTA SFIDE */}
             <div className="pg-card" style={{ marginBottom: 0 }}>
               <div className="pg-card-header">
                 <div className="pg-card-header-left">
@@ -283,7 +280,6 @@ function ChallengesRefereePage() {
             </div>
           </div>
 
-          {/* ── BONUS / MALUS (solo visualizzazione) ── */}
           <div className="pg-card" style={{ marginTop: 20, marginBottom: 0 }}>
             <div className="pg-card-header">
               <div className="pg-card-header-left">
