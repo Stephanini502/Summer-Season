@@ -12,17 +12,16 @@ function UserDataPage() {
   const token = localStorage.getItem("jwtToken");
   const headers = { "Content-Type": "application/json", Authorization: `Bearer ${token}` };
 
-  const [user, setUser]                 = useState(null);
-  const [roles, setRoles]               = useState([]);
-  const [leagues, setLeagues]           = useState([]);
-  const [rankings, setRankings]         = useState({});
-  const [weeklyPoints, setWeeklyPoints] = useState(0);
-  const [globalRanking, setGlobalRanking] = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState("");
-  const [avatarUrl, setAvatarUrl]       = useState(null);
-  const [uploading, setUploading]       = useState(false);
-  const [toast, setToast]               = useState(null);
+  const [user, setUser]                   = useState(null);
+  const [roles, setRoles]                 = useState([]);
+  const [leagues, setLeagues]             = useState([]);
+  const [rankings, setRankings]           = useState({});
+  const [weeklyPoints, setWeeklyPoints]   = useState(0);
+  const [loading, setLoading]             = useState(true);
+  const [error, setError]                 = useState("");
+  const [avatarUrl, setAvatarUrl]         = useState(null);
+  const [uploading, setUploading]         = useState(false);
+  const [toast, setToast]                 = useState(null);
 
   const [showCreateLeague, setShowCreateLeague] = useState(false);
   const [leagueName, setLeagueName]             = useState("");
@@ -31,11 +30,93 @@ function UserDataPage() {
   const [selectedUsers, setSelectedUsers]       = useState([]);
   const [creatingLeague, setCreatingLeague]     = useState(false);
   const [showDropdown, setShowDropdown]         = useState(false);
+  const [dropdownPos, setDropdownPos]           = useState({ top: 0, left: 0, width: 0 });
 
-  const fileInputRef = useRef();
-  const searchRef    = useRef();
-  const dropdownRef  = useRef();
-  const navigate     = useNavigate();
+  const fileInputRef  = useRef();
+  const searchInputRef = useRef();
+  const dropdownRef   = useRef();
+  const navigate      = useNavigate();
+
+  const extraStyles = `
+    .league-search-wrap { 
+      position: relative; /* Questo è fondamentale */
+    }
+
+    .league-search-dropdown {
+      position: absolute; /* Cambiato da fixed a absolute */
+      z-index: 9999;
+      top: 100%; /* Si attacca esattamente sotto l'input */
+      left: 0;
+      width: 100%; /* Prende la stessa larghezza dell'input */
+      margin-top: 4px;
+      background: #0f1623;
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 12px;
+      max-height: 220px; 
+      overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    }
+    .league-search-item {
+      padding: 11px 16px; cursor: pointer;
+      display: flex; align-items: center; gap: 10px;
+      transition: background 0.14s; font-size: 0.83rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .league-search-item:last-child { border-bottom: none; }
+    .league-search-item:hover { background: rgba(96,165,250,0.08); }
+    .league-search-avatar {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, rgba(96,165,250,0.25), rgba(251,191,36,0.2));
+      border: 1px solid rgba(96,165,250,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 800; color: #60a5fa;
+    }
+    .league-search-name { fontWeight: 600; color: var(--text); font-size: 0.83rem; }
+    .league-search-handle { font-size: 0.7rem; color: var(--text-muted); margin-top: 1px; }
+
+    .participant-chips {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 12px 0 4px;
+    }
+    .participant-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 12px 6px 6px; border-radius: 30px;
+      background: rgba(96,165,250,0.08);
+      border: 1px solid rgba(96,165,250,0.2);
+      font-size: 0.78rem; font-weight: 600; color: var(--text);
+      transition: border-color 0.15s;
+    }
+    .participant-chip:hover { border-color: rgba(248,113,113,0.4); }
+    .participant-chip-avatar {
+      width: 24px; height: 24px; border-radius: 50%;
+      background: linear-gradient(135deg, rgba(96,165,250,0.3), rgba(251,191,36,0.2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 800; color: #60a5fa; flex-shrink: 0;
+    }
+    .participant-chip-you {
+      background: rgba(251,191,36,0.08);
+      border-color: rgba(251,191,36,0.25);
+      color: #fbbf24;
+    }
+    .participant-chip-you .participant-chip-avatar {
+      background: linear-gradient(135deg, rgba(251,191,36,0.3), rgba(251,191,36,0.1));
+      color: #fbbf24;
+    }
+    .participant-chip-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-muted); font-size: 0.72rem;
+      display: flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; border-radius: 50%;
+      transition: all 0.15s; padding: 0;
+    }
+    .participant-chip-remove:hover { background: rgba(248,113,113,0.2); color: #f87171; }
+  `;
+
+  const calcDropdownPos = () => {
+    if (!searchInputRef.current) return;
+    const rect = searchInputRef.current.getBoundingClientRect();
+    setDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  };
 
   const normalizeDatas = (data) => {
     if (!data) return [];
@@ -44,8 +125,7 @@ function UserDataPage() {
     return [data];
   };
   const normalizeUserRanking = (u) => ({
-    name: u.name || u.Name,
-    surname: u.surname || u.Surname,
+    name: u.name || u.Name, surname: u.surname || u.Surname,
     userName: u.userName || u.UserName,
     totalPoints: parseInt(u.totalPoints ?? u.TotalPoints ?? 0)
   });
@@ -67,27 +147,14 @@ function UserDataPage() {
       fetch(`http://localhost:5247/api/users/${userId}/roles`, { headers }).then(safeJson),
       fetch(`http://localhost:5247/api/leagues/user/${userId}`, { headers }).then(safeJson),
       fetch(`http://localhost:5247/api/results/weeklyResults/${userId}`, { headers }).then(safeJson),
-      fetch(`http://localhost:5247/api/users`, { headers }).then(safeJson),
     ])
-      .then(async ([userData, rolesData, leaguesData, weeklyData, allUsersData]) => {
+      .then(async ([userData, rolesData, leaguesData, weeklyData]) => {
         const normalizedLeagues = normalizeDatas(leaguesData);
         setUser(userData);
         setAvatarUrl(userData?.avatarUrl ?? userData?.AvatarUrl ?? null);
         setRoles(normalizeDatas(rolesData));
         setLeagues(normalizedLeagues);
         setWeeklyPoints(weeklyData ?? 0);
-
-        const allUsers = normalizeDatas(allUsersData)
-          .map(u => ({
-            id: u.id ?? u.Id,
-            name: u.name ?? u.Name ?? "",
-            surname: u.surname ?? u.Surname ?? "",
-            userName: u.userName ?? u.UserName ?? "",
-            totalPoints: parseInt(u.totalPoints ?? u.TotalPoints ?? 0)
-          }))
-          .sort((a, b) => b.totalPoints - a.totalPoints);
-        setGlobalRanking(allUsers);
-
         const rankingMap = {};
         if (normalizedLeagues.length > 0) {
           await Promise.all(normalizedLeagues.map(async (league) => {
@@ -127,7 +194,12 @@ function UserDataPage() {
             userName: u.userName ?? u.UserName ?? ""
           }));
         setSearchResults(filtered);
-        setShowDropdown(filtered.length > 0);
+        if (filtered.length > 0) {
+          calcDropdownPos();
+          setShowDropdown(true);
+        } else {
+          setShowDropdown(false);
+        }
       } catch { }
     }, 300);
     return () => clearTimeout(timeout);
@@ -135,14 +207,14 @@ function UserDataPage() {
 
   useEffect(() => {
     const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target) &&
-          searchRef.current && !searchRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
+      if (!showDropdown) return;
+      if (dropdownRef.current?.contains(e.target)) return;
+      if (searchInputRef.current?.contains(e.target)) return;
+      setShowDropdown(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
+  }, [showDropdown]);
 
   const addUser = (u) => { setSelectedUsers(prev => [...prev, u]); setSearchQuery(""); setShowDropdown(false); };
   const removeUser = (id) => setSelectedUsers(prev => prev.filter(u => u.id !== id));
@@ -200,9 +272,9 @@ function UserDataPage() {
     return { emoji: "", badge: "pg-badge-blue" };
   };
 
-  if (loading) return (<><style>{sharedStyles}{userPageStyles}</style><div className="pg-root"><div className="pg-loading"><div className="pg-spinner"/></div></div></>);
-  if (error)   return (<><style>{sharedStyles}{userPageStyles}</style><div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div></>);
-  if (!user)   return (<><style>{sharedStyles}{userPageStyles}</style><div className="pg-root"><div className="pg-empty">Utente non trovato</div></div></>);
+  if (loading) return (<><style>{sharedStyles}{userPageStyles}{extraStyles}</style><div className="pg-root"><div className="pg-loading"><div className="pg-spinner"/></div></div></>);
+  if (error)   return (<><style>{sharedStyles}{userPageStyles}{extraStyles}</style><div className="pg-root"><div className="pg-alert pg-alert-danger">⚠️ {error}</div></div></>);
+  if (!user)   return (<><style>{sharedStyles}{userPageStyles}{extraStyles}</style><div className="pg-root"><div className="pg-empty">Utente non trovato</div></div></>);
 
   const initials    = `${(user.name || "?")[0]}${(user.surname || "?")[0]}`.toUpperCase();
   const totalPoints = user?.totalPoints ?? user?.TotalPoints ?? 0;
@@ -210,7 +282,7 @@ function UserDataPage() {
 
   return (
     <>
-      <style>{sharedStyles}{userPageStyles}</style>
+      <style>{sharedStyles}{userPageStyles}{extraStyles}</style>
 
       {toast && <div className={`avatar-toast ${toast.isError ? "avatar-toast-error" : ""}`}>{toast.msg}</div>}
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" style={{ display: "none" }} onChange={handleAvatarChange} />
@@ -218,20 +290,16 @@ function UserDataPage() {
       <div className="pg-root">
         <div className="pg-content">
 
-      <header className="pg-header">
-        <div>
-          <p className="pg-eyebrow">SummerSeason</p>
-          <h1 className="pg-title">Profilo Utente</h1>
-        </div>
-        <div style={{ display:"flex", gap:10 }}>
-          <button className="pg-btn pg-btn-ghost" onClick={() => navigate("/ranking")}>
-            🌍 Classifica globale
-          </button>
-          <button className="pg-btn pg-btn-primary" onClick={() => navigate("/challenges")}>
-            🏁 Vai alle sfide
-          </button>
-        </div>
-      </header>
+          <header className="pg-header">
+            <div>
+              <p className="pg-eyebrow">SummerSeason</p>
+              <h1 className="pg-title">Profilo Utente</h1>
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button className="pg-btn pg-btn-ghost" onClick={() => navigate("/ranking")}>🌍 Classifica globale</button>
+              <button className="pg-btn pg-btn-primary" onClick={() => navigate("/challenges")}>🏁 Vai alle sfide</button>
+            </div>
+          </header>
 
           {/* FORM CREA LEGA */}
           {isOwnProfile && showCreateLeague && (
@@ -248,29 +316,54 @@ function UserDataPage() {
               <div style={{ padding: "20px 24px" }}>
                 <form onSubmit={handleCreateLeague}>
                   <div className="pg-grid-2" style={{ gap: 20, marginBottom: 16 }}>
+
+                    {/* Nome lega */}
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Nome lega</label>
-                      <input className="pg-input" placeholder="Es. Estate 2026" value={leagueName} onChange={e => setLeagueName(e.target.value)} required />
+                      <input
+                        className="pg-input"
+                        placeholder="Es. Estate 2026"
+                        value={leagueName}
+                        onChange={e => setLeagueName(e.target.value)}
+                        required
+                      />
                     </div>
+
+                    {/* Ricerca partecipanti */}
                     <div className="pg-field" style={{ marginBottom: 0 }}>
                       <label className="pg-field-label">Cerca partecipanti</label>
-                      <div className="user-search-wrap" ref={searchRef}>
+                      <div className="league-search-wrap">
                         <input
+                          ref={searchInputRef}
                           className="pg-input"
-                          placeholder="Cerca per username o nome..."
+                          placeholder="Digita nome o username..."
                           value={searchQuery}
                           onChange={e => setSearchQuery(e.target.value)}
-                          onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                          onFocus={() => {
+                            calcDropdownPos();
+                            if (searchResults.length > 0) setShowDropdown(true);
+                          }}
                           autoComplete="off"
                         />
                         {showDropdown && (
-                          <div className="user-search-dropdown" ref={dropdownRef}>
+                          <div
+                            className="league-search-dropdown"
+                            ref={dropdownRef}
+                            /* Rimosso lo stile inline con dropdownPos */
+                          >
                             {searchResults.map(u => (
-                              <div key={u.id} className="user-search-item" onMouseDown={() => addUser(u)}>
-                                <div className="user-search-avatar">{(u.name[0] ?? "?").toUpperCase()}</div>
+                              <div 
+                                key={u.id} 
+                                className="league-search-item" 
+                                onMouseDown={(e) => {
+                                  e.preventDefault(); // Impedisce la chiusura immediata su alcuni browser
+                                  addUser(u);
+                                }}
+                              >
+                                <div className="league-search-avatar">{(u.name[0] ?? "?").toUpperCase()}</div>
                                 <div>
-                                  <div style={{ fontWeight: 600, color: "var(--text)" }}>{u.name} {u.surname}</div>
-                                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>@{u.userName}</div>
+                                  <div className="league-search-name">{u.name} {u.surname}</div>
+                                  <div className="league-search-handle">@{u.userName}</div>
                                 </div>
                               </div>
                             ))}
@@ -280,26 +373,40 @@ function UserDataPage() {
                     </div>
                   </div>
 
-                  {selectedUsers.length > 0 && (
+                  {/* Chips partecipanti selezionati */}
+                  {(selectedUsers.length > 0) && (
                     <div style={{ marginBottom: 16 }}>
-                      <p style={{ fontSize: "0.7rem", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 8 }}>
-                        Partecipanti selezionati ({selectedUsers.length + 1} incluso te)
+                      <p style={{ fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 10 }}>
+                        Partecipanti ({selectedUsers.length + 1})
                       </p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                        <div className="selected-user-chip" style={{ background: "rgba(251,191,36,0.1)", borderColor: "rgba(251,191,36,0.3)", color: "var(--sun-dark)" }}>
-                          Tu (admin)
+                      <div className="participant-chips">
+                        {/* Tu */}
+                        <div className="participant-chip participant-chip-you">
+                          <div className="participant-chip-avatar">Tu</div>
+                          <span>Tu (admin)</span>
                         </div>
                         {selectedUsers.map(u => (
-                          <div key={u.id} className="selected-user-chip">
-                            {u.name} {u.surname}
-                            <button type="button" onClick={() => removeUser(u.id)}>✕</button>
+                          <div key={u.id} className="participant-chip">
+                            <div className="participant-chip-avatar">{(u.name[0] ?? "?").toUpperCase()}</div>
+                            <span>{u.name} {u.surname}</span>
+                            <button
+                              type="button"
+                              className="participant-chip-remove"
+                              onClick={() => removeUser(u.id)}
+                              title="Rimuovi"
+                            >✕</button>
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  <button type="submit" className="pg-btn pg-btn-sun" style={{ minWidth: 200 }} disabled={creatingLeague || !leagueName.trim()}>
+                  <button
+                    type="submit"
+                    className="pg-btn pg-btn-sun"
+                    style={{ minWidth: 200 }}
+                    disabled={creatingLeague || !leagueName.trim()}
+                  >
                     {creatingLeague ? "⏳ Creazione..." : "🏅 Crea lega"}
                   </button>
                 </form>

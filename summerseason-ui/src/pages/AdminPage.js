@@ -45,6 +45,8 @@ function AdminPage() {
   const [notifications, setNotifications] = useState([]);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const searchInputRef = useRef();
 
   const token = localStorage.getItem("jwtToken");
   const adminId = parseInt(localStorage.getItem("userId"));
@@ -54,7 +56,6 @@ function AdminPage() {
   const [leagueName, setLeagueName] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
 
-  // Ricerca partecipanti
   const [searchQuery, setSearchQuery]     = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showDropdown, setShowDropdown]   = useState(false);
@@ -114,23 +115,33 @@ function AdminPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Ricerca partecipanti con debounce
-  useEffect(() => {
-    if (searchQuery.length < 2) { setSearchResults([]); setShowDropdown(false); return; }
-    const timeout = setTimeout(() => {
-      const filtered = participants
-        .filter(u => {
-          const un = u.userName.toLowerCase();
-          const name = `${u.name} ${u.surname}`.toLowerCase();
-          const q = searchQuery.toLowerCase();
-          return (un.includes(q) || name.includes(q)) && !selectedUsers.includes(u.id);
-        })
-        .slice(0, 8);
-      setSearchResults(filtered);
-      setShowDropdown(filtered.length > 0);
-    }, 200);
-    return () => clearTimeout(timeout);
-  }, [searchQuery, selectedUsers, participants]);
+useEffect(() => {
+  if (searchQuery.length < 2) { 
+    setSearchResults([]); 
+    setShowDropdown(false); 
+    return; 
+  }
+
+  const timeout = setTimeout(() => {
+    const q = searchQuery.toLowerCase();
+    
+    const filtered = participants.filter(u => {
+      const username = (u.userName || "").toLowerCase();
+      const fullName = `${u.name} ${u.surname}`.toLowerCase();
+      
+      const matches = username.includes(q) || fullName.includes(q);
+      const notSelected = !selectedUsers.includes(u.id);
+      
+      return matches && notSelected;
+    }).slice(0, 8);
+
+    console.log("Partecipanti trovati:", filtered); 
+    setSearchResults(filtered);
+    setShowDropdown(filtered.length > 0);
+  }, 200);
+
+  return () => clearTimeout(timeout);
+}, [searchQuery, selectedUsers, participants]);
 
   // Chiudi dropdown cliccando fuori
   useEffect(() => {
@@ -143,6 +154,17 @@ function AdminPage() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+  if (showDropdown && searchInputRef.current) {
+    const rect = searchInputRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + window.scrollY + 4, // Aggiungi scrollY se usi fixed/absolute misti
+      left: rect.left,
+      width: rect.width
+    });
+  }
+}, [showDropdown, searchQuery]);
 
   const handleCreateUser = async (e) => {
     e.preventDefault(); setError("");
@@ -192,14 +214,23 @@ function AdminPage() {
   return (
     <>
       <style>{adminStyles}{pointRequestAdminStyles}{`
-        .user-search-wrap { position: relative; }
-        .user-search-dropdown {
-          position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
-          background: #1a2236; border: 1px solid rgba(255,255,255,0.1);
-          border-radius: var(--radius-sm); margin-top: 4px;
-          max-height: 200px; overflow-y: auto;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-        }
+            .user-search-wrap { 
+              position: relative; /* Questo farà da ancora per la tendina */
+            }
+
+            .user-search-dropdown {
+              position: absolute; /* Cambiato da fixed a absolute */
+              z-index: 9999;
+              top: 100%; /* Si posiziona esattamente sotto l'input */
+              left: 0;
+              width: 100%; /* Prende tutta la larghezza dell'input padre */
+              background: #1a2236; 
+              border: 1px solid rgba(255,255,255,0.1);
+              border-radius: 4px;
+              max-height: 200px; 
+              overflow-y: auto;
+              box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            }
         .user-search-item {
           padding: 10px 14px; cursor: pointer;
           display: flex; align-items: center; gap: 10px;
@@ -230,7 +261,6 @@ function AdminPage() {
       <div className="adm-root">
         <div className="adm-content">
 
-          {/* HEADER */}
           <header className="adm-header">
             <div>
               <p className="adm-eyebrow">SummerSeason</p>
@@ -243,7 +273,6 @@ function AdminPage() {
 
           {error && <div className="adm-alert"><span>⚠️</span> {error}</div>}
 
-          {/* PROPOSTE ARBITRI */}
           <div
             className="adm-card"
             style={{ marginBottom: 24, cursor: "pointer", borderColor: unreadCount > 0 ? "rgba(245,158,11,0.25)" : undefined }}
@@ -268,7 +297,6 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* RICHIESTE PUNTI */}
           <div
             className="adm-card"
             style={{ marginBottom: 24, cursor: "pointer" }}
@@ -289,7 +317,6 @@ function AdminPage() {
             </div>
           </div>
 
-          {/* STATS */}
           <div className="adm-stats">
             <div className="adm-stat-card">
               <div><p className="adm-stat-label">Utenti registrati</p><p className="adm-stat-value">{users.length}</p></div>
@@ -303,10 +330,8 @@ function AdminPage() {
 
           <div className="adm-grid">
 
-            {/* COLONNA SINISTRA */}
             <div className="adm-col">
 
-              {/* CREA UTENTE */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">✏️</div>
@@ -343,7 +368,6 @@ function AdminPage() {
                 </div>
               </div>
 
-              {/* LISTA UTENTI */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">👥</div>
@@ -378,10 +402,8 @@ function AdminPage() {
               </div>
             </div>
 
-            {/* COLONNA DESTRA */}
             <div className="adm-col">
 
-              {/* CREA LEGA */}
               <div className="adm-card">
                 <div className="adm-card-header">
                   <div className="adm-card-icon">🏅</div>
@@ -396,23 +418,27 @@ function AdminPage() {
 
                     <p className="adm-section-label">Partecipanti</p>
 
-                    {/* Ricerca */}
                     <div className="user-search-wrap" ref={searchRef} style={{ marginBottom: 10 }}>
                       <input
+                        ref={searchInputRef}
                         className="adm-input"
                         placeholder="Cerca per username o nome..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
-                        onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
+                        onFocus={() => {
+                          if (searchResults.length > 0) setShowDropdown(true);
+                        }}
                         autoComplete="off"
                       />
+                      
                       {showDropdown && (
                         <div className="user-search-dropdown" ref={dropdownRef}>
                           {searchResults.map(u => (
                             <div
                               key={u.id}
                               className="user-search-item"
-                              onMouseDown={() => {
+                              onMouseDown={(e) => {
+                                e.preventDefault(); 
                                 setSelectedUsers(prev => [...prev, u.id]);
                                 setSearchQuery("");
                                 setShowDropdown(false);
@@ -420,8 +446,8 @@ function AdminPage() {
                             >
                               <div className="user-search-avatar">{(u.name[0] ?? "?").toUpperCase()}</div>
                               <div>
-                                <div style={{ fontWeight: 600, color: "var(--text)" }}>{u.name} {u.surname}</div>
-                                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>@{u.userName}</div>
+                                <div style={{ fontWeight: 600, color: "#fff" }}>{u.name} {u.surname}</div>
+                                <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.5)" }}>@{u.userName}</div>
                               </div>
                             </div>
                           ))}
@@ -429,7 +455,6 @@ function AdminPage() {
                       )}
                     </div>
 
-                    {/* Chip selezionati */}
                     {selectedUsers.length > 0 && (
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
                         {selectedUsers.map(uid => {

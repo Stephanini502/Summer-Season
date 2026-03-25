@@ -113,9 +113,10 @@ public class PointRequestService
 
         _ctx.Notifications.Add(new Notification
         {
-            ReceiverUserId         = req.UserId,
+            ReceiverUserId = req.UserId,
             Type           = "Approved",
-            Message        = $"✓ La tua sfida \"{req.Challenge?.Name}\" è stata approvata! +{req.PointsRequested} pts",
+            Message        = $"✓ La tua sfida \"{req.Challenge?.Name}\" è stata approvata! +{req.PointsRequested} pts" +
+                            (string.IsNullOrEmpty(note) ? "" : $" — Nota: {note}"),
             PointRequestId = req.Id
         });
 
@@ -141,7 +142,7 @@ public class PointRequestService
         {
             ReceiverUserId         = req.UserId,
             Type           = "Rejected",
-            Message        = $"✕ La tua sfida \"{req.Challenge?.Name}\" è stata rifiutata.{(note != null ? " Nota: " + note : "")}",
+            Message        = $"✕ La tua sfida \"{req.Challenge?.Name}\" è stata rifiutata.{(note != null ? " — Nota: " + note : "")}",
             PointRequestId = req.Id
         });
 

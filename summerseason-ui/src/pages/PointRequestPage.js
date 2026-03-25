@@ -120,7 +120,6 @@ function PointRequestsPage() {
                 >
                   <div className="pr-page-item">
 
-                    {/* Header richiesta */}
                     <div className="pr-page-item-top">
                       <div className="pr-avatar">
                         {(r.user?.name?.[0] ?? "?")}{(r.user?.surname?.[0] ?? "")}
@@ -145,7 +144,6 @@ function PointRequestsPage() {
                       </div>
                     </div>
 
-                    {/* Tag info */}
                     <div className="pr-meta">
                       <span className="pr-meta-tag">Sfida base: {r.challenge?.points} pts</span>
                       {r.pointsRequested !== r.challenge?.points && (
@@ -159,7 +157,6 @@ function PointRequestsPage() {
                       )}
                     </div>
 
-                    {/* Nota */}
                     <div className="pr-note-wrap">
                       <span className="pr-note-label">Nota per l'utente (opzionale)</span>
                       <input
@@ -170,7 +167,6 @@ function PointRequestsPage() {
                       />
                     </div>
 
-                    {/* Azioni */}
                     <div className="pr-actions">
                       <button
                         className="pr-btn-approve"

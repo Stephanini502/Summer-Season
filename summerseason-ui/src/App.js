@@ -82,6 +82,8 @@ function getRolesFromStorage() {
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("jwtToken"));
   const [userRoles, setUserRoles] = useState(getRolesFromStorage());
+  const [pendingNotifs, setPendingNotifs] = useState([]);
+  const [showNotifModal, setShowNotifModal] = useState(false);
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
