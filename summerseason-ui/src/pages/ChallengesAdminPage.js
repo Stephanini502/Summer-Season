@@ -1,6 +1,102 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { sharedStyles } from "../style/SharedStyles";
 import { darkPatch } from "../style/DarkPatch";
+
+function LeagueSearch({ leagues, selected, onToggle }) {
+  const [search, setSearch] = useState("");
+
+  const filtered = leagues.filter(l =>
+    l.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Selezionate in cima
+  const sorted = [
+    ...filtered.filter(l => selected.includes(l.id)),
+    ...filtered.filter(l => !selected.includes(l.id)),
+  ];
+
+  return (
+    <div>
+      {/* Input ricerca */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 6,
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: "var(--radius-sm)",
+        padding: "7px 11px",
+        marginBottom: 8,
+      }}>
+        <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", flexShrink: 0 }}>🔍</span>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Filtra leghe..."
+          style={{
+            background: "transparent", border: "none", outline: "none",
+            padding: 0, fontSize: "0.82rem", color: "var(--text)", width: "100%",
+          }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch("")}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              color: "var(--text-muted)", padding: 0, fontSize: "0.75rem", lineHeight: 1,
+            }}
+          >✕</button>
+        )}
+      </div>
+
+      {/* Lista checkbox filtrata */}
+      <div style={{
+        display: "flex", flexDirection: "column", gap: 5,
+        maxHeight: 200, overflowY: "auto", paddingRight: 4,
+      }}>
+        {sorted.length === 0 && (
+          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", padding: "6px 0" }}>
+            Nessuna lega trovata per &quot;{search}&quot;
+          </p>
+        )}
+        {sorted.map(l => {
+          const isSelected = selected.includes(l.id);
+          return (
+            <label
+              key={l.id}
+              onClick={() => onToggle(l.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 8,
+                padding: "8px 11px",
+                background: isSelected ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.03)",
+                border: `1px solid ${isSelected ? "rgba(251,191,36,0.35)" : "rgba(255,255,255,0.08)"}`,
+                borderRadius: "var(--radius-sm)",
+                cursor: "pointer", transition: "all 0.15s", userSelect: "none",
+              }}
+            >
+              <input
+                type="checkbox"
+                readOnly
+                checked={isSelected}
+                style={{ accentColor: "var(--sun-dark)", width: 13, height: 13, flexShrink: 0 }}
+              />
+              <span style={{
+                fontSize: "0.78rem", fontWeight: 500, color: "var(--text)",
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+              }}>
+                {l.name}
+              </span>
+              {isSelected && (
+                <span style={{ marginLeft: "auto", fontSize: "0.65rem", color: "var(--sun-dark)", fontWeight: 700 }}>
+                  ✓
+                </span>
+              )}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function ChallengesAdminPage() {
   const [challenges, setChallenges] = useState([]);
@@ -187,6 +283,8 @@ function ChallengesAdminPage() {
                     <input type="number" className="pg-input" min="0" value={newChallenge.points}
                       onChange={e => setNewChallenge({ ...newChallenge, points: e.target.value })} required />
                   </div>
+
+                  {/* Campo Leghe con ricerca inline */}
                   <div className="pg-field">
                     <label className="pg-field-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       Leghe
@@ -197,29 +295,18 @@ function ChallengesAdminPage() {
                       )}
                     </label>
                     {leagues.length === 0 ? (
-                      <p style={{ fontSize: "0.78rem", color: "var(--text-light)", paddingTop: 6 }}>Nessuna lega disponibile</p>
+                      <p style={{ fontSize: "0.78rem", color: "var(--text-light)", paddingTop: 6 }}>
+                        Nessuna lega disponibile
+                      </p>
                     ) : (
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, maxHeight: 200, overflowY: "auto", paddingRight: 2 }}>
-                        {leagues.map(l => {
-                          const selected = newChallenge.leagueIds.includes(l.id);
-                          return (
-                            <label key={l.id} onClick={() => toggleLeague(l.id)} style={{
-                              display: "flex", alignItems: "center", gap: 8, padding: "8px 11px",
-                              background: selected ? "rgba(251,191,36,0.08)" : "rgba(255,255,255,0.03)",
-                              border: `1px solid ${selected ? "rgba(251,191,36,0.35)" : "rgba(255,255,255,0.08)"}`,
-                              borderRadius: "var(--radius-sm)", cursor: "pointer", transition: "all 0.15s", userSelect: "none"
-                            }}>
-                              <input type="checkbox" readOnly checked={selected}
-                                style={{ accentColor: "var(--sun-dark)", width: 13, height: 13, flexShrink: 0 }} />
-                              <span style={{ fontSize: "0.78rem", fontWeight: 500, color: "var(--text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                                {l.name}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
+                      <LeagueSearch
+                        leagues={leagues}
+                        selected={newChallenge.leagueIds}
+                        onToggle={toggleLeague}
+                      />
                     )}
                   </div>
+
                   <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
                     <button type="submit" className={`pg-btn ${editingId ? "pg-btn-warning" : "pg-btn-primary"}`} style={{ flex: 1 }}>
                       {editingId ? "✓ Aggiorna" : "+ Aggiungi sfida"}
